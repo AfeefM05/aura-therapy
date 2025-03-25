@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 90, 107, 70; /* Olive Green for text */
+  --background-start-rgb: 245, 239, 231; /* Cream Beige */
+  --background-end-rgb: 230, 213, 184; /* Sandy Tan */
+}
+
+.dark {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 0, 0, 0;
+  --background-end-rgb: 0, 0, 0;
+}
+
+@layer base {
+  body {
+    @apply bg-gradient-to-br from-creamBeige to-sandyTan text-oliveGreen;
+    min-height: 100vh;
+  }
+}
+
+/* Smooth transitions */
+.page-transition {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+/* Card hover effects */
+.hover-card {
+  @apply transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-[1.02] hover:bg-white/90;
+}
+
+/* Button styles */
+.btn-warm {
+  @apply bg-earthBrown text-white px-6 py-2 rounded-full transition-all duration-300 
+         hover:bg-warmTerracotta hover:shadow-warm active:scale-95;
+}
+
+/* Navigation styles */
+.nav-link {
+  @apply relative px-4 py-2 text-earthBrown transition-all duration-300
+         hover:text-warmTerracotta after:content-[''] after:absolute after:bottom-0 
+         after:left-0 after:w-full after:h-0.5 after:bg-earthBrown 
+         after:scale-x-0 after:transition-transform after:duration-300
+         hover:after:scale-x-100;
+}
+
+.nav-link.active {
+  @apply after:scale-x-100 font-medium;
+}
