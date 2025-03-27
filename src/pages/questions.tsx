@@ -204,7 +204,7 @@ export default function QuestionsPage() {
       formData.append('video', new File([videoBlob], 'video.webm', { type: 'video/webm' }));
     }
     if (audioBlob) {
-      formData.append('audio', new File([audioBlob], 'audio.webm', { type: 'audio/webm' }));
+      formData.append('audio', new File([audioBlob], 'audio.wav', { type: 'audio/wav' }));
     }
 
     try {
@@ -214,7 +214,10 @@ export default function QuestionsPage() {
       });
 
       if (response.ok) {
-        router.push('/chatbot')
+        const data = await response.json();
+        // Store taglines in localStorage for later use
+        localStorage.setItem('recommendationTaglines', JSON.stringify(data.taglines));
+        router.push('/chatbot');
       } else {
         console.error('Submission failed');
       }
@@ -286,14 +289,16 @@ export default function QuestionsPage() {
               })}
             </div>
 
-            {(questions[currentQuestion].multiSelect && multiSelectAnswers.length > 0) && (
+            {(!questions[currentQuestion].multiSelect || 
+              (questions[currentQuestion].multiSelect && multiSelectAnswers.length > 0)) && (
               <div className="mt-8 flex justify-end">
                 <button
                   onClick={nextQuestion}
                   className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
-                  disabled={multiSelectAnswers.length < (questions[currentQuestion].maxSelections || 3)}
+                  disabled={questions[currentQuestion].multiSelect && 
+                    multiSelectAnswers.length < (questions[currentQuestion].maxSelections || 3)}
                 >
-                  Next →
+                  {currentQuestion === questions.length - 1 ? 'Next →' : 'Next →'}
                 </button>
               </div>
             )}
@@ -316,33 +321,33 @@ export default function QuestionsPage() {
             />
             
             <div className="mt-6 flex gap-4">
-            <button
-              type="button"
-              onClick={() => recordingType === 'video' ? stopRecording() : startRecording('video')}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
-            >
-              <Camera size={18} />
-              {recordingType === 'video' ? 'Stop Recording' : 'Record Video'}
-            </button>
-            <button
-              type="button"
-              onClick={() => recordingType === 'audio' ? stopRecording() : startRecording('audio')}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
-            >
-              <Mic size={18} />
-              {recordingType === 'audio' ? 'Stop Recording' : 'Record Audio'}
-            </button>
-          </div>
-          {recordingType === 'video' && (
-            <video ref={videoRef} autoPlay muted className="mt-4 w-full rounded-lg" />
-          )}
+              <button
+                type="button"
+                onClick={() => recordingType === 'video' ? stopRecording() : startRecording('video')}
+                className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+              >
+                <Camera size={18} />
+                {recordingType === 'video' ? 'Stop Recording' : 'Record Video'}
+              </button>
+              <button
+                type="button"
+                onClick={() => recordingType === 'audio' ? stopRecording() : startRecording('audio')}
+                className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+              >
+                <Mic size={18} />
+                {recordingType === 'audio' ? 'Stop Recording' : 'Record Audio'}
+              </button>
+            </div>
+            {recordingType === 'video' && (
+              <video ref={videoRef} autoPlay muted className="mt-4 w-full rounded-lg" />
+            )}
 
-          <button
-            className="mt-8 w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition-colors"
-            onClick={handleSubmit}
-          >
-            Submit
-          </button>
+            <button
+              className="mt-8 w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition-colors"
+              onClick={handleSubmit}
+            >
+              Submit
+            </button>
           </motion.div>
         )}
       </AnimatePresence>

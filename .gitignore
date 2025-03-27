@@ -10,6 +10,10 @@
 !.yarn/releases
 !.yarn/versions
 
+/public/buddha.glb
+/Test-Calls/yolov8n-face.pt
+/Test-Calls/best_emotion_model.pth
+
 # testing
 /coverage
 
@@ -23,6 +27,7 @@
 # misc
 .DS_Store
 *.pem
+
 
 # debug
 npm-debug.log*
