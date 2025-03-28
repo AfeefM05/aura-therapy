@@ -16,7 +16,7 @@ function BuddhaModel() {
   // Continuous Rotation
   useFrame(() => {
     if (modelRef.current) {
-      modelRef.current.rotation.y += 0.008; // Adjust speed if needed
+      modelRef.current.rotation.y +=0.008; // Adjust speed if needed
     }
   });
 
