@@ -37,6 +37,7 @@ export default async function handler(req, res) {
                 - Generate A Unique Tagline for the user based on the user's personality traits and It want To improves user's mood and emotional state.
                 - This Tagline will be used for the Music Recommendation System by Searching the Music from the Youtube so Give according to the Mood.
                 - It should be 10-15 words long.
+                - Add in End of the Tagline "in Tamil Music"
               
             2).Video Tagline:
                 - Generate a tagline for the user based on the Mind State analysis and the user's personality traits and It want To improves user's mood and emotional state.
@@ -74,6 +75,8 @@ export default async function handler(req, res) {
                   - Give Daily Affirmation as short and concise as possible           
         -Like  This Generate All Based  on the User Based Information and User Inputs Data if No Data Then Default Peace and Happy Things Give to the User
         -Soon Response Should be in Given
+
+        ## Mindful Activities, Meditation Practices,Self Care Activities,Daily Affirmation,Books,Music,Video Should Not be same Everytime thing and Give unique responses
     `
 
 

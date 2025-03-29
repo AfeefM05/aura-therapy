@@ -36,37 +36,39 @@ const categoryColors = {
 };
 
 // YouTube API Key
-const API_KEY = "AIzaSyCBKJiFRRw3mEKmHYXZASMJurExiQEr618";
+const API_KEY = "AIzaSyDNXgYD8CQQdefXIPjM8ikJFk9xHZC5kYQ";
 const SEARCH_URL = "https://www.googleapis.com/youtube/v3/search";
 
 // Default fallback data
 const defaultMusicTagline = "peaceful meditation music";
 const defaultVideoTagline = "Buddha meditation teachings";
 
+const initialTaglines = {
+    music: '',
+    video: '',
+    books: {
+        booksnames: [],
+        bookdetails: []
+    },
+    selfcare: {
+        selfcarenames: [],
+        selfcaredetails: []
+    },
+    meditationpractices: {
+        meditationnames: [],
+        meditationdetails: []
+    },
+    mindfulactivities: {
+        mindfulactivitiesnames: [],
+        mindfulactivitiesdetails: []
+    },
+    dailyAffirmation: ''
+};
+
 export default function SuggestionsPage() {
   const [videos, setVideos] = useState<Suggestion[]>([]);
   const [music, setMusic] = useState<Suggestion[]>([]);
-  const [taglines, setTaglines] = useState<{
-    music: string;
-    video: string;
-    books: {
-      booksnames: string[];
-      bookdetails: string[];
-    };
-    selfcare: {
-      selfcarenames: string[];
-      selfcaredetails: string[];
-    };
-    meditationpractices: {
-      meditationnames: string[];
-      meditationdetails: string[];
-    };
-    mindfulactivities: {
-      mindfulactivitiesnames: string[];
-      mindfulactivitiesdetails: string[];
-    };
-    dailyAffirmation: string;
-  }>({ music: '', video: '', books: { booksnames: [], bookdetails: [] }, selfcare: { selfcarenames: [], selfcaredetails: [] }, meditationpractices: { meditationnames: [], meditationdetails: [] }, mindfulactivities: { mindfulactivitiesnames: [], mindfulactivitiesdetails: [] }, dailyAffirmation: '' });
+  const [taglines, setTaglines] = useState(initialTaglines);
   
   const [isLoading, setIsLoading] = useState({
     music: true,
@@ -80,75 +82,18 @@ export default function SuggestionsPage() {
     
     console.log('Stored Taglines:', storedTaglines); // Debugging line
     if (storedTaglines) {
-      const parsedTaglines = JSON.parse(storedTaglines);
-      console.log('Parsed Taglines:', parsedTaglines); // Debugging line
-      setTaglines(parsedTaglines);
+        const parsedTaglines = JSON.parse(storedTaglines);
+        console.log('Parsed Taglines:', parsedTaglines); // Debugging line
+        // Directly set the taglines state with the parsed JSON
+        setTaglines(parsedTaglines);
     } else {
-      const taglineResult = {
-        music: 'Unwind and recharge with melodies tailored to uplift your spirit and soothe your soul.',
-        video: 'Discover videos that resonate with your inner self, sparking joy and inspiration.',
-        books: {
-          booksnames: [
-            'A Tale of Two Cities',
-            'The Power of Positive Thinking',
-            'The Girl with the Dragon Tattoo',
-            'How to Win Friends and Influence People'
-          ],
-          bookdetails: [
-            'A classic tale of love, loss, and redemption set against the backdrop of the French Revolution.',
-            'Explore the power of positive thinking and learn how to transform your life with simple techniques.',
-            'A gripping mystery that will keep you guessing until the very end, filled with twists and turns.',
-            'Discover the secrets to building strong relationships and creating a fulfilling life with others.'
-          ]
-        },
-        selfcare: {
-          selfcarenames: [
-            'Aromatherapy Bath',
-            'Reading',
-            'Yoga',
-            'Quality Time with Loved Ones'
-          ],
-          selfcaredetails: [
-            'Indulge in a warm bath with essential oils to relax your muscles and calm your mind.',
-            'Read a book to escape into another world and unwind from the stresses of the day.',
-            'Practice yoga to improve flexibility, reduce stress, and promote overall well-being.',
-            'Spend time with loved ones to strengthen relationships and boost your mood.'
-          ]
-        },
-        meditationpractices: {
-          meditationnames: [
-            'Breath Awareness Meditation',
-            'Visualization Meditation',
-            'Affirmation Meditation'
-          ],
-          meditationdetails: [
-            'Focus on your breath to calm the mind and reduce stress, promoting inner peace.',
-            'Visualize a peaceful scene to relax the body and mind, fostering tranquility.',
-            'Repeat positive affirmations to boost self-esteem and cultivate a positive mindset.'
-          ]
-        },
-        mindfulactivities: {
-          mindfulactivitiesnames: [
-            'Mindful Eating',
-            'Nature Walk',
-            'Music Appreciation',
-            'Gardening'
-          ],
-          mindfulactivitiesdetails: [
-            'Engage your senses to fully appreciate the flavors and textures of your food.',
-            'Take a leisurely walk and observe the beauty of nature around you.',
-            'Listen to your favorite music and let the sounds wash over you, promoting relaxation.',
-            'Spend time in nature to reduce stress and improve overall well-being.'
-          ]
-        },
-        dailyAffirmation: 'I embrace peace and happiness, allowing positivity to guide my day.'
-      };
-      setTaglines(taglineResult);
-      localStorage.setItem('recommendationTaglines', JSON.stringify(taglineResult));
+        // Fallback logic if no stored taglines are found
+        setTaglines(initialTaglines); // Set to initial structure if not found
+        localStorage.setItem('recommendationTaglines', JSON.stringify(initialTaglines));
     }
 
     if (storedCompleted) {
-      setCompletedItems(JSON.parse(storedCompleted));
+        setCompletedItems(JSON.parse(storedCompleted));
     }
   }, []);
 
@@ -160,7 +105,7 @@ export default function SuggestionsPage() {
         if (cachedData) {
           // If data exists in localStorage, use it
           setState(JSON.parse(cachedData));
-          return;
+          // return;
         }
 
         // Otherwise, fetch the data from the YouTube API
@@ -170,7 +115,6 @@ export default function SuggestionsPage() {
             q: query,
             type: "video",
             maxResults: 6,
-            videoCategoryId: category === "music" ? "10" : undefined,
             key: API_KEY
           }
         });
@@ -228,14 +172,18 @@ export default function SuggestionsPage() {
 
     if (taglines.music) {
       fetchYouTubeData(taglines.music, "music", setMusic);
+      console.log(taglines.music+" in Tamil Music");
     } else {
       fetchYouTubeData(defaultMusicTagline, "music", setMusic);
+      console.log(defaultMusicTagline);
     }
 
     if (taglines.video) {
-      fetchYouTubeData(taglines.video, "videos", setVideos);
+      fetchYouTubeData(taglines.video+"Knowledge Content", "videos", setVideos);
+      console.log(taglines.video+" in with Theory Content");
     } else {
       fetchYouTubeData(defaultVideoTagline, "videos", setVideos);
+      console.log(defaultVideoTagline);
     }
   }, [taglines]);
 
@@ -501,7 +449,7 @@ export default function SuggestionsPage() {
 
         {/* Daily Affirmation */}
         <div className="bg-gradient-to-r from-blue-900 to-purple-900 rounded-2xl p-8 text-center border border-gray-700">
-          <h3 className="text-2xl font-semibold mb-4">Today's Affirmation</h3>
+          <h3 className="text-2xl font-semibold mb-4">Today&apos;s Affirmation</h3>
           <p className="text-xl italic text-gray-200">
             &quot;{taglines.dailyAffirmation}&quot;
           </p>
