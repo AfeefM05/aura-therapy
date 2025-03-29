@@ -43,37 +43,31 @@ const SEARCH_URL = "https://www.googleapis.com/youtube/v3/search";
 const defaultMusicTagline = "peaceful meditation music";
 const defaultVideoTagline = "Buddha meditation teachings";
 
-// Dummy Data
-const dummyActivities: Suggestion[] = [
-  { id: "a1", title: "Morning Yoga Flow", description: "Gentle yoga sequence to start your day with positivity", category: "activities", duration: "20 mins", completed: false },
-  { id: "a2", title: "Gratitude Journaling", description: "Write down 3 things you're grateful for today", category: "activities", duration: "10 mins", completed: false },
-  { id: "a3", title: "Breathing Exercises", description: "4-7-8 breathing technique for relaxation", category: "activities", duration: "5 mins", completed: false },
-  { id: "a4", title: "Nature Walk", description: "Connect with nature and clear your mind", category: "activities", duration: "30 mins", completed: false }
-];
-
-const dummyBooks: Suggestion[] = [
-  { id: "b1", title: "The Power of Now", description: "Eckhart Tolle's guide to spiritual enlightenment", category: "books", completed: false },
-  { id: "b2", title: "Atomic Habits", description: "Build good habits and break bad ones", category: "books", completed: false },
-  { id: "b3", title: "The Untethered Soul", description: "Journey beyond yourself with Michael Singer", category: "books", completed: false },
-  { id: "b4", title: "Wherever You Go, There You Are", description: "Mindfulness meditation in everyday life", category: "books", completed: false }
-];
-
-const dummyMeditation: Suggestion[] = [
-  { id: "m1", title: "Body Scan Meditation", description: "Progressive relaxation technique", category: "meditation", duration: "15 mins", completed: false },
-  { id: "m2", title: "Loving-Kindness Practice", description: "Cultivate compassion for yourself and others", category: "meditation", duration: "10 mins", completed: false },
-  { id: "m3", title: "Mindful Breathing", description: "Focus on your breath to anchor in the present", category: "meditation", duration: "5 mins", completed: false }
-];
-
-const dummySelfCare: Suggestion[] = [
-  { id: "s1", title: "Digital Detox", description: "Take 1 hour away from screens", category: "self-care", duration: "60 mins", completed: false },
-  { id: "s2", title: "Warm Bath Relaxation", description: "Add Epsom salts and essential oils", category: "self-care", duration: "30 mins", completed: false },
-  { id: "s3", title: "Positive Affirmations", description: "Repeat empowering statements to yourself", category: "self-care", duration: "5 mins", completed: false }
-];
-
 export default function SuggestionsPage() {
   const [videos, setVideos] = useState<Suggestion[]>([]);
   const [music, setMusic] = useState<Suggestion[]>([]);
-  const [taglines, setTaglines] = useState<{ [key: string]: string }>({});
+  const [taglines, setTaglines] = useState<{
+    music: string;
+    video: string;
+    books: {
+      booksnames: string[];
+      bookdetails: string[];
+    };
+    selfcare: {
+      selfcarenames: string[];
+      selfcaredetails: string[];
+    };
+    meditationpractices: {
+      meditationnames: string[];
+      meditationdetails: string[];
+    };
+    mindfulactivities: {
+      mindfulactivitiesnames: string[];
+      mindfulactivitiesdetails: string[];
+    };
+    dailyAffirmation: string;
+  }>({ music: '', video: '', books: { booksnames: [], bookdetails: [] }, selfcare: { selfcarenames: [], selfcaredetails: [] }, meditationpractices: { meditationnames: [], meditationdetails: [] }, mindfulactivities: { mindfulactivitiesnames: [], mindfulactivitiesdetails: [] }, dailyAffirmation: '' });
+  
   const [isLoading, setIsLoading] = useState({
     music: true,
     videos: true
@@ -83,17 +77,74 @@ export default function SuggestionsPage() {
   useEffect(() => {
     const storedTaglines = localStorage.getItem('recommendationTaglines');
     const storedCompleted = localStorage.getItem('completedSuggestion');
-    // const storedCompleted = localStorage.getItem('completedSuggestions');
-    console.log(storedTaglines);
+    
+    console.log('Stored Taglines:', storedTaglines); // Debugging line
     if (storedTaglines) {
-      setTaglines(JSON.parse(storedTaglines));
+      const parsedTaglines = JSON.parse(storedTaglines);
+      console.log('Parsed Taglines:', parsedTaglines); // Debugging line
+      setTaglines(parsedTaglines);
     } else {
-      setTaglines({
-        music: defaultMusicTagline,
-        video: defaultVideoTagline,
-        books: 'Seeking solace: Stories to heal a heavy heart.',
-        activities: 'Seeking solace and joy amidst the sadness.'
-      });
+      const taglineResult = {
+        music: 'Unwind and recharge with melodies tailored to uplift your spirit and soothe your soul.',
+        video: 'Discover videos that resonate with your inner self, sparking joy and inspiration.',
+        books: {
+          booksnames: [
+            'A Tale of Two Cities',
+            'The Power of Positive Thinking',
+            'The Girl with the Dragon Tattoo',
+            'How to Win Friends and Influence People'
+          ],
+          bookdetails: [
+            'A classic tale of love, loss, and redemption set against the backdrop of the French Revolution.',
+            'Explore the power of positive thinking and learn how to transform your life with simple techniques.',
+            'A gripping mystery that will keep you guessing until the very end, filled with twists and turns.',
+            'Discover the secrets to building strong relationships and creating a fulfilling life with others.'
+          ]
+        },
+        selfcare: {
+          selfcarenames: [
+            'Aromatherapy Bath',
+            'Reading',
+            'Yoga',
+            'Quality Time with Loved Ones'
+          ],
+          selfcaredetails: [
+            'Indulge in a warm bath with essential oils to relax your muscles and calm your mind.',
+            'Read a book to escape into another world and unwind from the stresses of the day.',
+            'Practice yoga to improve flexibility, reduce stress, and promote overall well-being.',
+            'Spend time with loved ones to strengthen relationships and boost your mood.'
+          ]
+        },
+        meditationpractices: {
+          meditationnames: [
+            'Breath Awareness Meditation',
+            'Visualization Meditation',
+            'Affirmation Meditation'
+          ],
+          meditationdetails: [
+            'Focus on your breath to calm the mind and reduce stress, promoting inner peace.',
+            'Visualize a peaceful scene to relax the body and mind, fostering tranquility.',
+            'Repeat positive affirmations to boost self-esteem and cultivate a positive mindset.'
+          ]
+        },
+        mindfulactivities: {
+          mindfulactivitiesnames: [
+            'Mindful Eating',
+            'Nature Walk',
+            'Music Appreciation',
+            'Gardening'
+          ],
+          mindfulactivitiesdetails: [
+            'Engage your senses to fully appreciate the flavors and textures of your food.',
+            'Take a leisurely walk and observe the beauty of nature around you.',
+            'Listen to your favorite music and let the sounds wash over you, promoting relaxation.',
+            'Spend time in nature to reduce stress and improve overall well-being.'
+          ]
+        },
+        dailyAffirmation: 'I embrace peace and happiness, allowing positivity to guide my day.'
+      };
+      setTaglines(taglineResult);
+      localStorage.setItem('recommendationTaglines', JSON.stringify(taglineResult));
     }
 
     if (storedCompleted) {
@@ -102,9 +153,10 @@ export default function SuggestionsPage() {
   }, []);
 
   useEffect(() => {
-    const fetchYouTubeData = async (query: string, category: 'videos' | 'music', setState: React.Dispatch<React.SetStateAction<Suggestion[]>>) => {
+    const fetchYouTubeData = async (query: string, category: 'music' | 'videos', setState: React.Dispatch<React.SetStateAction<Suggestion[]>>) => {
       try {
         const cachedData = localStorage.getItem(`${category}Data`);
+        
         if (cachedData) {
           // If data exists in localStorage, use it
           setState(JSON.parse(cachedData));
@@ -123,7 +175,7 @@ export default function SuggestionsPage() {
           }
         });
 
-        const results = response.data.items.map((video: any, index: number) => ({
+        const results: Suggestion[] = response.data.items.map((video: { id: { videoId: string }; snippet: { title: string; channelTitle: string } }, index: number) => ({
           id: `yt-${category}-${index}`,
           title: video.snippet.title,
           description: video.snippet.channelTitle,
@@ -223,6 +275,7 @@ export default function SuggestionsPage() {
                 handleComplete(item.id);
               }}
               className={`p-1 rounded-full ${isCompleted ? 'text-green-400' : 'text-gray-500 hover:text-gray-300'}`}
+              title="Mark as completed"
             >
               <CheckCircle2 className="w-5 h-5" />
             </button>
@@ -291,6 +344,7 @@ export default function SuggestionsPage() {
           <button 
             onClick={() => scroll('left')} 
             className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-gray-800/80 hover:bg-gray-700/90 rounded-full p-2 ml-2"
+            title="Scroll left"
           >
             <ChevronLeft className="w-5 h-5 text-white" />
           </button>
@@ -310,6 +364,7 @@ export default function SuggestionsPage() {
           <button 
             onClick={() => scroll('right')} 
             className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-gray-800/80 hover:bg-gray-700/90 rounded-full p-2 mr-2"
+            title="Scroll right"
           >
             <ChevronRight className="w-5 h-5 text-white" />
           </button>
@@ -347,10 +402,16 @@ export default function SuggestionsPage() {
             <h2 className="text-2xl font-semibold text-white">Mindful Activities</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {dummyActivities.map(item => (
+            {taglines.mindfulactivities.mindfulactivitiesnames.map((name, index) => (
               <SuggestionCard 
-                key={item.id} 
-                item={{ ...item, completed: completedItems[item.id] || false }} 
+                key={`activity-${index}`} 
+                item={{
+                  id: `activity-${index}`,
+                  title: name,
+                  description: taglines.mindfulactivities.mindfulactivitiesdetails[index],
+                  category: 'activities',
+                  completed: completedItems[`activity-${index}`] || false
+                }} 
               />
             ))}
           </div>
@@ -363,10 +424,16 @@ export default function SuggestionsPage() {
             <h2 className="text-2xl font-semibold text-white">Meditation Practices</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {dummyMeditation.map(item => (
+            {taglines.meditationpractices.meditationnames.map((name, index) => (
               <SuggestionCard 
-                key={item.id} 
-                item={{ ...item, completed: completedItems[item.id] || false }} 
+                key={`meditation-${index}`} 
+                item={{
+                  id: `meditation-${index}`,
+                  title: name,
+                  description: taglines.meditationpractices.meditationdetails[index],
+                  category: 'meditation',
+                  completed: completedItems[`meditation-${index}`] || false
+                }} 
               />
             ))}
           </div>
@@ -395,10 +462,16 @@ export default function SuggestionsPage() {
             <h2 className="text-2xl font-semibold text-white">Healing Reads</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {dummyBooks.map(item => (
+            {taglines.books.booksnames.map((name, index) => (
               <SuggestionCard 
-                key={item.id} 
-                item={{ ...item, completed: completedItems[item.id] || false }} 
+                key={`book-${index}`} 
+                item={{
+                  id: `book-${index}`,
+                  title: name,
+                  description: taglines.books.bookdetails[index],
+                  category: 'books',
+                  completed: completedItems[`book-${index}`] || false
+                }} 
               />
             ))}
           </div>
@@ -411,10 +484,16 @@ export default function SuggestionsPage() {
             <h2 className="text-2xl font-semibold text-white">Self-Care Rituals</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {dummySelfCare.map(item => (
+            {taglines.selfcare.selfcarenames.map((name, index) => (
               <SuggestionCard 
-                key={item.id} 
-                item={{ ...item, completed: completedItems[item.id] || false }} 
+                key={`selfcare-${index}`} 
+                item={{
+                  id: `selfcare-${index}`,
+                  title: name,
+                  description: taglines.selfcare.selfcaredetails[index],
+                  category: 'self-care',
+                  completed: completedItems[`selfcare-${index}`] || false
+                }} 
               />
             ))}
           </div>
@@ -424,7 +503,7 @@ export default function SuggestionsPage() {
         <div className="bg-gradient-to-r from-blue-900 to-purple-900 rounded-2xl p-8 text-center border border-gray-700">
           <h3 className="text-2xl font-semibold mb-4">Today's Affirmation</h3>
           <p className="text-xl italic text-gray-200">
-            "I am worthy of love, peace, and happiness. Each day, I grow stronger and more resilient."
+            &quot;{taglines.dailyAffirmation}&quot;
           </p>
           <button className="mt-6 px-6 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition">
             Save Affirmation

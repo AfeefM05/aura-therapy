@@ -93,6 +93,16 @@ export default function QuestionsPage() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [taglines, setTaglines] = useState<string[]>([]);
+  const [particlePositions, setParticlePositions] = useState<{ top: string; left: string; size: number }[]>([]);
+
+  useEffect(() => {
+    const positions = Array.from({ length: 15 }).map(() => ({
+      top: `${Math.random() * 100}%`,
+      left: `${Math.random() * 100}%`,
+      size: Math.random() * 80 + 20,
+    }));
+    setParticlePositions(positions);
+  }, []);
 
   const progress = ((currentQuestion) / questions.length) * 100;
 
@@ -292,7 +302,8 @@ const handleSubmit = async () => {
   }
 
   const formData = new FormData();
-  formData.append('answers', JSON.stringify(answers));
+  formData.append('answers', JSON.stringify(Object.values(answers))); // Append the answers with questions
+  
   formData.append('description', description);
   
   // Add video file
@@ -382,18 +393,18 @@ const handleSubmit = async () => {
   }, []);
 
   return (
-    <div className="min-h-[100dvh] w-full bg-gradient-to-br from-black via-gray-900 to-gray-800 text-white overflow-hidden relative flex flex-col">
+    <div className="min-h-[100dvh] w-full bg-gradient-to-br from-black via-gray-900 to-gray-800 text-white overflow-hidden relative flex flex-col moving-background">
       {/* Floating particles background */}
       <div className="fixed inset-0 z-0">
-        {Array.from({ length: 15 }).map((_, i) => (
+        {particlePositions.map((position, i) => (
           <motion.div
             key={i}
             className="absolute rounded-full bg-white opacity-5"
             style={{
-              width: Math.random() * 80 + 20,
-              height: Math.random() * 80 + 20,
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
+              width: position.size,
+              height: position.size,
+              top: position.top,
+              left: position.left,
             }}
             animate={{
               y: [0, Math.random() * 100 - 50],
