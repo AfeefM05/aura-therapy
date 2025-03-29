@@ -36,7 +36,7 @@ const categoryColors = {
 };
 
 // YouTube API Key
-const API_KEY = "AIzaSyBWiS5PkwcQpQueNDr2JdSUpoLZ0JIRj2c";
+const API_KEY = "AIzaSyCBKJiFRRw3mEKmHYXZASMJurExiQEr618";
 const SEARCH_URL = "https://www.googleapis.com/youtube/v3/search";
 
 // Default fallback data
@@ -82,8 +82,9 @@ export default function SuggestionsPage() {
 
   useEffect(() => {
     const storedTaglines = localStorage.getItem('recommendationTaglines');
-    const storedCompleted = localStorage.getItem('completedSuggestions');
-    
+    const storedCompleted = localStorage.getItem('completedSuggestion');
+    // const storedCompleted = localStorage.getItem('completedSuggestions');
+
     if (storedTaglines) {
       setTaglines(JSON.parse(storedTaglines));
     } else {
@@ -103,6 +104,14 @@ export default function SuggestionsPage() {
   useEffect(() => {
     const fetchYouTubeData = async (query: string, category: 'videos' | 'music', setState: React.Dispatch<React.SetStateAction<Suggestion[]>>) => {
       try {
+        const cachedData = localStorage.getItem(`${category}Data`);
+        if (cachedData) {
+          // If data exists in localStorage, use it
+          setState(JSON.parse(cachedData));
+          return;
+        }
+
+        // Otherwise, fetch the data from the YouTube API
         const response = await axios.get(SEARCH_URL, {
           params: {
             part: "snippet",
@@ -124,6 +133,8 @@ export default function SuggestionsPage() {
         }));
 
         setState(results);
+        // Store the fetched data in localStorage for future use
+        localStorage.setItem(`${category}Data`, JSON.stringify(results));
       } catch (error) {
         console.error(`Error fetching YouTube ${category}:`, error);
         // Fallback dummy data
