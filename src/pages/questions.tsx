@@ -6,113 +6,74 @@ import { Camera, Mic, Check } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import '../app/globals.css';
 
-const questions = [
+interface Question {
+  question: string;
+  options: { 
+    emoji?: string; 
+    text: string; 
+    imageUrl?: string;
+  }[];
+  multiSelect?: boolean;
+  maxSelections?: number;
+}
+
+const questions: Question[] = [
   {
-    question: "If you were a character in a movie, what role would you play?",
+    question: "🎉 Your ideal Friday night is…",
     options: [
-      { emoji: "🦸", text: "The Hero (brave and determined)" },
-      { emoji: "🧙", text: "The Wise Mentor (helpful and insightful)" },
-      { emoji: "🎭", text: "The Comedian (funny and lighthearted)" },
-      { emoji: "🕵️", text: "The Detective (curious and analytical)" },
-      { emoji: "🖤", text: "The Anti-Hero (flawed but relatable)" }
+      { emoji: "🍿", text: "Netflix, PJs, and snacks (I'm a cozy hermit!)" },
+      { emoji: "🥳", text: "Party with 100 strangers (The more chaos, the better!)" },
+      { emoji: "🎲", text: "Game night with close friends (Small circles rule!)" },
+      { emoji: "🚗", text: "Spontaneous road trip (Adventure is my middle name!)" }
     ]
   },
   {
-    question: "What's your go-to way to spend a free afternoon?",
+    question: "🌱 How do you handle a super stressful day?",
     options: [
-      { emoji: "📚", text: "Reading a book or learning something new" },
-      { emoji: "🎨", text: "Creating art, music, or writing" },
-      { emoji: "🏋️", text: "Exercising or playing sports" },
-      { emoji: "👥", text: "Hanging out with friends or family" },
-      { emoji: "🛋️", text: "Relaxing with a movie or video games" }
+      { emoji: "🍦", text: "Cry into a pint of ice cream (Emotions? I own them!)" },
+      { emoji: "🧘", text: "Yoga + meditation (Zen mode activated.)" },
+      { emoji: "💬", text: "Vent to your group chat (Drama = therapy.)" },
+      { emoji: "🎮", text: "Ignore it and play video games (Stress? Never heard of her.)" }
     ]
   },
   {
-    question: "If you could instantly master any skill, what would it be?",
+    question: "If you were a meme, you'd be…",
     options: [
-      { emoji: "🎤", text: "Public speaking or performing" },
-      { emoji: "🧠", text: "Solving complex problems" },
-      { emoji: "🖌️", text: "Painting, drawing, or designing" },
-      { emoji: "🧘", text: "Meditation or mindfulness" },
-      { emoji: "🕹️", text: "Gaming or coding" }
+      { 
+        imageUrl: "/images/memes/meme1.jpg",
+        text: "\"This is fine\" dog in a burning room (I'm chill… mostly.)" 
+      },
+      { 
+        imageUrl: "/images/memes/meme2.webp",
+        text: "\"Distracted boyfriend\" (Ooh, shiny!)" 
+      },
+      { 
+        imageUrl: "/images/memes/meme3.jpg",
+        text: "\"Evil Kermit\" (I'm the devil on your shoulder.)" 
+      },
+      { 
+        imageUrl: "/images/memes/meme4.jpg",
+        text: "\"Drake rejecting veggies\" (I know what I want!)" 
+      }
     ]
   },
   {
-    question: "What's your ideal weekend getaway?",
+    question: "🧐 When making plans, you're the friend who…",
     options: [
-      { emoji: "🌊", text: "A beach vacation (relaxing and sunny)" },
-      { emoji: "🏔️", text: "A mountain retreat (peaceful and scenic)" },
-      { emoji: "🏙️", text: "A city adventure (exploring and bustling)" },
-      { emoji: "🏕️", text: "Camping in nature (outdoorsy and rustic)" },
-      { emoji: "🏠", text: "Staying home (cozy and comfortable)" }
+      { emoji: "📊", text: "Creates a color-coded spreadsheet (Organized or obsessed? Yes.)" },
+      { emoji: "🕊️", text: "Says \"Let's wing it!\" (Plans are for mortals.)" },
+      { emoji: "⏰", text: "Forgets until the last minute (Oops, my bad!)" },
+      { emoji: "👩", text: "Delegates tasks like a CEO (I'm the leader leader.)" }
     ]
   },
   {
-    question: "How do you usually make decisions?",
+    question: "🚀 Your life motto is…",
     options: [
-      { emoji: "🧠", text: "Logic and reasoning (I weigh the pros and cons)" },
-      { emoji: "💖", text: "Gut feeling (I trust my instincts)" },
-      { emoji: "👥", text: "Advice from others (I ask friends or family)" },
-      { emoji: "🎲", text: "Spontaneity (I go with the flow)" },
-      { emoji: "🕵️", text: "Research (I gather all the facts first)" }
+      { emoji: "💤", text: "\"Sleep is my superpower\" (Nap champion!)" },
+      { emoji: "🤪", text: "\"Why be normal?\" (Chaotic good vibes!)" },
+      { emoji: "🧠", text: "\"Trust the process\" (Slow and steady!)" },
+      { emoji: "🚀", text: "\"Go big or go home\" (Maximum effort, always!)" }
     ]
-  },
-  {
-    question: "What's your superpower in a team setting?",
-    options: [
-      { emoji: "💡", text: "Coming up with creative ideas" },
-      { emoji: "🤝", text: "Bringing people together and mediating" },
-      { emoji: "🛠️", text: "Solving problems and fixing things" },
-      { emoji: "👑", text: "Leading and organizing the group" },
-      { emoji: "🔋", text: "Keeping everyone motivated and positive" }
-    ]
-  },
-  {
-    question: "If your life had a theme song, what would it be?",
-    options: [
-      { emoji: "🎵", text: "Upbeat and energetic (e.g., pop or rock)" },
-      { emoji: "🎻", text: "Calm and soothing (e.g., classical or acoustic)" },
-      { emoji: "🎤", text: "Bold and empowering (e.g., hip-hop or anthem)" },
-      { emoji: "🎸", text: "Nostalgic and reflective (e.g., indie or folk)" },
-      { emoji: "🎧", text: "Eclectic and unique (e.g., experimental or jazz)" }
-    ]
-  },
-  {
-    question: "What's your favorite way to connect with others?",
-    options: [
-      { emoji: "🗣️", text: "Deep conversations (one-on-one or small groups)" },
-      { emoji: "🎉", text: "Social events (parties or gatherings)" },
-      { emoji: "🎮", text: "Online gaming or virtual hangouts" },
-      { emoji: "📱", text: "Texting or social media" },
-      { emoji: "🧘", text: "Shared activities (yoga, sports, or hobbies)" }
-    ]
-  },
-  {
-    question: "What's your approach to solving a big problem?",
-    options: [
-      { emoji: "🧩", text: "Break it into smaller pieces and tackle them one by one" },
-      { emoji: "🌀", text: "Jump in headfirst and figure it out as I go" },
-      { emoji: "👥", text: "Ask for help or collaborate with others" },
-      { emoji: "🧠", text: "Analyze it from every angle before taking action" },
-      { emoji: "🧘", text: "Take a step back and reflect before deciding" }
-    ]
-  },
-  {
-    question: "Pick three emojis that best describe you:",
-    options: [
-      { emoji: "😊", text: "Friendly and approachable" },
-      { emoji: "📊", text: "Analytical and detail-oriented" },
-      { emoji: "🎨", text: "Creative and artistic" },
-      { emoji: "🧠", text: "Curious and intellectual" },
-      { emoji: "🏆", text: "Ambitious and driven" },
-      { emoji: "🧘", text: "Calm and reflective" },
-      { emoji: "🎉", text: "Fun-loving and energetic" },
-      { emoji: "🤝", text: "Supportive and empathetic" },
-      { emoji: "🧩", text: "Problem-solver and innovative" },
-      { emoji: "🕵️", text: "Mysterious and introspective" }
-    ],
-    multiSelect: true,
-    maxSelections: 3
   }
 ];
 
@@ -127,7 +88,7 @@ export default function QuestionsPage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const [recordingType, setRecordingType] = useState<'video' | 'audio' | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
 
   const progress = ((currentQuestion) / questions.length) * 100;
 
@@ -155,15 +116,15 @@ export default function QuestionsPage() {
       }
     }
   };
-  const startRecording = async (type: 'video' | 'audio') => {
+
+  const startRecording = async () => {
     try {
-      setRecordingType(type);
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: type === 'video',
+        video: true,
         audio: true,
       });
 
-      if (type === 'video' && videoRef.current) {
+      if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
 
@@ -174,11 +135,13 @@ export default function QuestionsPage() {
       mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
       mediaRecorder.onstop = () => {
         const blob = new Blob(chunks, { type: mediaRecorder.mimeType });
-        if (type === 'video') setVideoBlob(blob);
-        else setAudioBlob(blob);
+        // Split the combined stream into video and audio
+        setVideoBlob(blob);
+        setAudioBlob(blob);
       };
 
       mediaRecorder.start();
+      setIsRecording(true);
     } catch (err) {
       console.error('Error accessing media devices:', err);
     }
@@ -188,18 +151,15 @@ export default function QuestionsPage() {
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-      setRecordingType(null);
+      setIsRecording(false);
     }
   };
 
   const handleSubmit = async () => {
     const formData = new FormData();
-    
-    // Add text data
     formData.append('answers', JSON.stringify(answers));
     formData.append('description', description);
     
-    // Add media files
     if (videoBlob) {
       formData.append('video', new File([videoBlob], 'video.webm', { type: 'video/webm' }));
     }
@@ -215,7 +175,6 @@ export default function QuestionsPage() {
 
       if (response.ok) {
         const data = await response.json();
-        // Store taglines in localStorage for later use
         localStorage.setItem('recommendationTaglines', JSON.stringify(data.taglines));
         router.push('/chatbot');
       } else {
@@ -225,7 +184,6 @@ export default function QuestionsPage() {
       console.error('Error submitting form:', error);
     }
   };
-
 
   const nextQuestion = () => {
     if (currentQuestion < questions.length - 1) {
@@ -276,7 +234,16 @@ export default function QuestionsPage() {
                         : 'bg-white hover:bg-purple-50 border border-gray-200 hover:border-purple-200'}
                       ${questions[currentQuestion].multiSelect ? 'pr-6' : ''}`}
                   >
-                    <span className="text-3xl">{option.emoji}</span>
+                    {option.emoji && (
+                      <span className="text-3xl">{option.emoji}</span>
+                    )}
+                    {option.imageUrl && (
+                      <img 
+                        src={option.imageUrl} 
+                        alt={option.text} 
+                        className="w-24 h-24 object-contain rounded-lg bg-gray-50"
+                      />
+                    )}
                     <span className="text-left flex-1">{option.text}</span>
                     {questions[currentQuestion].multiSelect && (
                       <div className={`w-5 h-5 flex items-center justify-center rounded-full 
@@ -320,28 +287,29 @@ export default function QuestionsPage() {
               placeholder="Please describe any specific concerns or challenges you're facing..."
             />
             
-            <div className="mt-6 flex gap-4">
+            <div className="mt-6 space-y-4">
               <button
                 type="button"
-                onClick={() => recordingType === 'video' ? stopRecording() : startRecording('video')}
-                className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                onClick={isRecording ? stopRecording : startRecording}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
               >
-                <Camera size={18} />
-                {recordingType === 'video' ? 'Stop Recording' : 'Record Video'}
+                {isRecording ? (
+                  <>
+                    <Camera size={18} />
+                    Stop Recording
+                  </>
+                ) : (
+                  <>
+                    <Camera size={18} />
+                    Start Recording
+                  </>
+                )}
               </button>
-              <button
-                type="button"
-                onClick={() => recordingType === 'audio' ? stopRecording() : startRecording('audio')}
-                className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
-              >
-                <Mic size={18} />
-                {recordingType === 'audio' ? 'Stop Recording' : 'Record Audio'}
-              </button>
+              {isRecording && (
+                <video ref={videoRef} autoPlay muted className="mt-4 w-full rounded-lg" />
+              )}
             </div>
-            {recordingType === 'video' && (
-              <video ref={videoRef} autoPlay muted className="mt-4 w-full rounded-lg" />
-            )}
-
+            
             <button
               className="mt-8 w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition-colors"
               onClick={handleSubmit}
