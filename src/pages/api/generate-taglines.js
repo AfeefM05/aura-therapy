@@ -93,7 +93,7 @@ export default async function handler(req, res) {
       })
     );
 
-    console.log(taglines);
+    console.log("Checking taglines :", taglines);
     res.status(200).json({
       success: true,
       taglines: Object.fromEntries(taglines.map(({ type, tagline }) => [type, tagline]))

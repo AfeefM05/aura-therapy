@@ -274,9 +274,6 @@ export default function ChatbotPage() {
       <div className="max-h-[100vh] flex pt-16">
         {/* History Sidebar */}
         <motion.div 
-          initial={{ x: -100, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ duration: 0.5 }}
           className="w-80 bg-gray-900/80 backdrop-blur-xl border-r border-gray-800 shadow-2xl flex flex-col"
         >
           <Card className="flex-1 flex flex-col">
@@ -345,9 +342,6 @@ export default function ChatbotPage() {
 
         {/* Main Chat Area */}
         <motion.div 
-          initial={{ x: 100, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ duration: 0.5 }}
           className="flex-1 flex flex-col min-h-0"
         >
           <Card className="flex-1 flex flex-col bg-gray-900/80 backdrop-blur-xl border-gray-800 shadow-2xl min-h-0">

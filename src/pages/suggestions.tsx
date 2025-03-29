@@ -84,7 +84,7 @@ export default function SuggestionsPage() {
     const storedTaglines = localStorage.getItem('recommendationTaglines');
     const storedCompleted = localStorage.getItem('completedSuggestion');
     // const storedCompleted = localStorage.getItem('completedSuggestions');
-
+    console.log(storedTaglines);
     if (storedTaglines) {
       setTaglines(JSON.parse(storedTaglines));
     } else {
