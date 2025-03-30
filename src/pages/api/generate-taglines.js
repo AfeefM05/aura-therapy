@@ -36,14 +36,15 @@ export default async function handler(req, res) {
                 - Generate a tagline for the user based on the Mind State analysis and the user's personality traits and It want To improves user's mood and emotional state.
                 - Generate A Unique Tagline for the user based on the user's personality traits and It want To improves user's mood and emotional state.
                 - This Tagline will be used for the Music Recommendation System by Searching the Music from the Youtube so Give according to the Mood.
+                - Give Tagline to Fetch Latest Tamil Songs like "latest sad Tamil Songs" "latest sad Tamil Songs" Dont Give Same Tagline Everytime and Given example  or provide singers sad songs it can give easily.
                 - It should be 10-15 words long.
-                - Add in End of the Tagline "in Tamil Music"
               
             2).Video Tagline:
                 - Generate a tagline for the user based on the Mind State analysis and the user's personality traits and It want To improves user's mood and emotional state.
                 - Generate A Unique Tagline for the user based on the user's personality traits and It want To improves user's mood and emotional state.
                 - This Tagline will be used for the Video Recommendation System by Searching the Video from the Youtube so Give according to the Mood.
                 - It should be 10-15 words long.
+                - I want videos that have more content and more views so user can get more information and come to good mood so like this searching GiveTagline Accordingly
 
             3).Books Tagline (Exactly 4):
                   - Generate a exact 4 Books Name according to the User Mood and Personality Traits and User Inputs Data if No Data then Generate Random Books Good Books for the User 
@@ -81,7 +82,7 @@ export default async function handler(req, res) {
 
 
     const {object}= await generateObject({
-      model: google('gemini-2.0-flash-exp'),
+      model: google('gemini-2.5-pro-exp-03-25'),
       prompt: prompts,
       apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
       schema: z.object({

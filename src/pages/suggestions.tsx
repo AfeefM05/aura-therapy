@@ -98,24 +98,24 @@ export default function SuggestionsPage() {
   }, []);
 
   useEffect(() => {
-    const fetchYouTubeData = async (query: string, category: 'music' | 'videos', setState: React.Dispatch<React.SetStateAction<Suggestion[]>>) => {
+    const fetchYouTubeData = async (query: string, category: 'music' | 'videos', setState: React.Dispatch<React.SetStateAction<Suggestion[]>>, duration: 'short' | 'medium') => {
       try {
         const cachedData = localStorage.getItem(`${category}Data`);
         
         if (cachedData) {
-          // If data exists in localStorage, use it
           setState(JSON.parse(cachedData));
-          // return;
+          return;
         }
 
-        // Otherwise, fetch the data from the YouTube API
+        // Fetch the data from the YouTube API
         const response = await axios.get(SEARCH_URL, {
           params: {
             part: "snippet",
             q: query,
             type: "video",
             maxResults: 6,
-            key: API_KEY
+            key: API_KEY,
+            videoDuration: duration // Use the duration parameter here
           }
         });
 
@@ -129,7 +129,6 @@ export default function SuggestionsPage() {
         }));
 
         setState(results);
-        // Store the fetched data in localStorage for future use
         localStorage.setItem(`${category}Data`, JSON.stringify(results));
       } catch (error) {
         console.error(`Error fetching YouTube ${category}:`, error);
@@ -170,22 +169,25 @@ export default function SuggestionsPage() {
       }
     };
 
-    if (taglines.music) {
-      fetchYouTubeData(taglines.music, "music", setMusic);
-      console.log(taglines.music+" in Tamil Music");
-    } else {
-      fetchYouTubeData(defaultMusicTagline, "music", setMusic);
-      console.log(defaultMusicTagline);
-    }
+    // Only fetch data if taglines have valid values
+    if (taglines.music || taglines.video) {
+      if (taglines.music) {
+        fetchYouTubeData(taglines.music, "music", setMusic, 'short');
+        console.log(taglines.music);
+      } else {
+        fetchYouTubeData(defaultMusicTagline, "music", setMusic, 'short');
+        console.log(defaultMusicTagline);
+      }
 
-    if (taglines.video) {
-      fetchYouTubeData(taglines.video+"Knowledge Content", "videos", setVideos);
-      console.log(taglines.video+" in with Theory Content");
-    } else {
-      fetchYouTubeData(defaultVideoTagline, "videos", setVideos);
-      console.log(defaultVideoTagline);
+      if (taglines.video) {
+        fetchYouTubeData(taglines.video + " Knowledge Content", "videos", setVideos, 'medium');
+        console.log(taglines.video);
+      } else {
+        fetchYouTubeData(defaultVideoTagline, "videos", setVideos, 'medium');
+        console.log(defaultVideoTagline);
+      }
     }
-  }, [taglines]);
+  }, [taglines]); // Depend on the entire taglines object
 
   const handleComplete = (id: string) => {
     const newCompletedItems = {

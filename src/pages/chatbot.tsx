@@ -4,14 +4,14 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Send, Bot, Trash2, Plus, Sparkles, HeartPulse, Brain, BookOpen, 
-  Home, MessageCircle, Activity, LayoutDashboard, Link as LinkIcon 
+  Home, MessageCircle, Activity, LayoutDashboard, Link as LinkIcon, Mic 
 } from 'lucide-react';
 import Link from 'next/link';
 import '../app/globals.css';
 import router from 'next/router';
 
 // Custom Card Components
-const Card = ({ children, className = '', ...props }) => (
+const Card = ({ children, className = '', ...props }: { children: React.ReactNode; className?: string; [key: string]: any; }) => (
   <div 
     className={`rounded-lg border bg-gray-900/80 backdrop-blur-xl border-gray-800 shadow-sm ${className}`} 
     {...props}
@@ -133,6 +133,8 @@ export default function ChatbotPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState<Message[][]>([]);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
+  const [isListening, setIsListening] = useState(false);
 
   useEffect(() => {
     const savedHistory = localStorage.getItem('chatHistoryArchive');
@@ -146,6 +148,36 @@ export default function ChatbotPage() {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [messages]);
+
+  useEffect(() => {
+    // Initialize speech recognition
+    const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recog = new SpeechRecognition();
+      recog.interimResults = true;
+      recog.lang = 'en-US';
+
+      recog.onresult = (event: SpeechRecognitionEvent) => {
+        const transcript = event.results[0][0].transcript;
+        setInput(prevInput => prevInput + ' ' + transcript); // Append recognized text to input
+      };
+
+      recog.onend = () => {
+        setIsListening(false); // Update listening state when recognition ends
+        startListening(); // Restart listening for continuous input
+      };
+
+      recog.onerror = (event: SpeechRecognitionError) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false); // Stop listening on error
+        // alert(`Error: ${event.error}`); // Alert the user about the error
+      };
+
+      setRecognition(recog);
+    } else {
+      console.error('Speech recognition not supported in this browser.');
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -266,6 +298,20 @@ export default function ChatbotPage() {
     localStorage.setItem('chatHistoryArchive', JSON.stringify(updatedHistory));
     
     setMessages([]);
+  };
+
+  const startListening = () => {
+    if (recognition) {
+      setIsListening(true);
+      recognition.start();
+    }
+  };
+
+  const stopListening = () => {
+    if (recognition) {
+      recognition.stop();
+      setIsListening(false);
+    }
   };
 
   return (
@@ -396,7 +442,6 @@ export default function ChatbotPage() {
                   </div>
                 </div>
                 
-                
                 <h3 className="text-xl font-semibold text-white mb-4">
                   Where would you like to start today?
                 </h3>
@@ -488,6 +533,16 @@ export default function ChatbotPage() {
                     className="flex-1 p-3 rounded-lg bg-gray-800/50 border border-gray-700 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     disabled={isLoading}
                   />
+                  <button
+                    type="button"
+                    onClick={isListening ? stopListening : startListening}
+                    className={`p-3 rounded-lg border border-gray-700 text-gray-100 transition-colors ${isListening ? 'bg-red-600' : 'bg-gray-800 hover:bg-gray-700'}`}
+                    title={isListening ? "Stop voice input" : "Start voice input"}
+                    aria-label={isListening ? "Stop voice input" : "Start voice input"}
+                    disabled={isLoading}
+                  >
+                    <Mic className="w-5 h-5" />
+                  </button>
                   <button
                     type="submit"
                     className="btn bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-500 hover:from-indigo-600 hover:via-purple-600 hover:to-violet-600 text-white border-0 shadow-lg px-6 transform hover:scale-105 transition-transform"
