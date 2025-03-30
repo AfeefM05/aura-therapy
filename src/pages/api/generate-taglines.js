@@ -64,7 +64,8 @@ export default async function handler(req, res) {
                   - Generate a exact 3 Meditation Practices to Do based on the User Mood and Personality Traits and User Inputs Data if No Data then Generate Random Meditation Practices for the User 
                   - And Also Generate a small Meditation Practice Description for the Practices described above in 10-15 words. 
                   - If there Are More Practices in Generation Give Names and Details of top 3 Practices.             
-                  - Give Meditation Practices Description as short and concise as possible           
+                  - Give Meditation Practices Description as short and concise as possible    
+                         
             6).Mindful Activities (Exactly 4):
                   - Generate a exact 4 Mindful Activities to Do based on the User Mood and Personality Traits and User Inputs Data if No Data then Generate Random Mindful Activities for the User 
                   - And Also Generate a small Mindful Activity Description for the Activities described above in 10-15 words.              
@@ -74,11 +75,16 @@ export default async function handler(req, res) {
             7).Daily Affirmation:
                   - Generate a Daily Affirmation for the User based on the User Mood and Personality Traits
                   - It should be 10-15 words long.
-                  - Give Daily Affirmation as short and concise as possible           
+                  - Give Daily Affirmation as short and concise as possible 
+
         -Like  This Generate All Based  on the User Based Information and User Inputs Data if No Data Then Default Peace and Happy Things Give to the User
         -Soon Response Should be in Given
 
         ## Mindful Activities, Meditation Practices,Self Care Activities,Daily Affirmation,Books,Music,Video Should Not be same Everytime thing and Give unique responses
+        ## Think new and unique for every field especially for Mindful Activities, Meditation Practices,Self Care Activities,Daily Affirmation,Books Give new and unique names and details
+        ##Because User will be see this activites same every time so give new and unique names and details
+
+        #### Give response as Soon as Possible to the User
     `
 
 

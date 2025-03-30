@@ -1,14 +1,33 @@
-import { createReadStream, mkdirSync, writeFileSync } from 'fs';
+import { createReadStream, mkdirSync, writeFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import formidable from 'formidable';
 import axios from 'axios';
 import FormData from 'form-data';
+import { createClient } from "@deepgram/sdk";
 
 export const config = {
   api: {
     bodyParser: false,
   },
 };
+
+const transcribeFile = async (audioFilePath) => {
+  const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
+
+  const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
+    createReadStream(audioFilePath),
+    {
+      model: "nova-3",
+      smart_format: true,
+    }
+  );
+
+
+  if (error) throw error;
+  console.log(result.results.channels[0].alternatives[0].transcript);
+  return result.results.channels[0].alternatives[0].transcript;
+};
+
 
 export default async function handler(req, res) {
   const uploadDir = join(process.cwd(), 'public', 'uploads');
@@ -29,9 +48,21 @@ export default async function handler(req, res) {
     const answers = JSON.parse(fields.answers?.[0] || '{}');
     const description = fields.description?.[0] || '';
     
+    // If description is empty, transcribe audio file
+    let finalDescription = description;
+
+    if (!description && files.audio) {
+      try {
+        finalDescription = await transcribeFile(files.audio[0].filepath);
+      } catch(error) {
+        console.log("Error transcribing audio file",error);
+        finalDescription="Normal And Energetic"
+      }
+    }
+
     // Save text data
     const dataPath = join(uploadDir, `data-${Date.now()}.json`);
-    writeFileSync(dataPath, JSON.stringify({ answers, description }));
+    writeFileSync(dataPath, JSON.stringify({ answers, description: finalDescription }));
 
     // Process media files
     const mediaEntries = {
@@ -101,7 +132,16 @@ export default async function handler(req, res) {
       }
     }
 
-    // Modify the response to only include necessary data for further processing
+    if (mediaEntries.audio) {
+      unlinkSync(mediaEntries.audio);
+    }
+    if (mediaEntries.video) {
+      unlinkSync(mediaEntries.video);
+    }
+    if (mediaEntries.text) {
+      unlinkSync(mediaEntries.text);
+    }
+
     res.status(200).json({
       success: true,
       mediaEntries, // Return media entries for further processing
@@ -109,8 +149,23 @@ export default async function handler(req, res) {
       audioAnalysis,
       videoAnalysis,
     });
+
+      
+    // Send data to Hugging Face Space
   } catch (err) {
+
+    if (mediaEntries.audio) {
+      unlinkSync(mediaEntries.audio);
+    }
+    if (mediaEntries.video) {
+      unlinkSync(mediaEntries.video);
+    }
+    if (mediaEntries.text) {
+      unlinkSync(mediaEntries.text);
+    }
+
     console.error('Error processing upload:', err);
     res.status(500).json({ error: 'Internal server error' });
+
   }
 }
