@@ -118,15 +118,23 @@ export default async function handler(req, res) {
       }
     }
 
-    // Send video to local model (or update this to use HF Space if needed)
+    // Send video to Hugging Face Space
     let videoAnalysis = null;
     if (mediaEntries.video) {
+      const videoPath = mediaEntries.video; // Path to the video file
+      const apiUrl = "https://rivalcoder-video-processing.hf.space/api/analyze-video";
+
+      const formData = new FormData();
+      formData.append('file', createReadStream(videoPath));
+
       try {
-        const response = await axios.post(
-          'http://localhost:4000', 
-          { path: mediaEntries.video }
-        ).catch(() => null);
-        videoAnalysis = response?.data || null;
+        const response = await axios.post(apiUrl, formData, {
+          headers: {
+            ...formData.getHeaders(),
+          },
+        });
+        videoAnalysis = response.data.results;
+        console.log('✅ Video analysis success:', videoAnalysis);
       } catch (error) {
         console.error('❌ Video analysis error:', error.response?.data || error.message);
       }

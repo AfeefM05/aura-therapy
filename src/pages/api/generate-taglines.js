@@ -38,7 +38,7 @@ export default async function handler(req, res) {
                 - This Tagline will be used for the Music Recommendation System by Searching the Music from the Youtube so Give according to the Mood.
                 - Give Tagline to Fetch Latest Tamil Songs like "latest sad Tamil Songs" "latest sad Tamil Songs" Dont Give Same Tagline Everytime and Given example  or provide singers sad songs it can give easily.
                 - It should be 10-15 words long.
-                - Add In End "Only Videos".
+                - Add In End "give Full Songs".
               
             2).Video Tagline:
                 - Generate a tagline for the user based on the Mind State analysis and the user's personality traits and It want To improves user's mood and emotional state.
