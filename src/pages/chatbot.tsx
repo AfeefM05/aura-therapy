@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Send, Bot, Trash2, Plus, Sparkles, HeartPulse, Brain, BookOpen, 
   Home, MessageCircle, Activity, LayoutDashboard, Link as LinkIcon, Mic,
-  Menu, X, ChevronLeft, ChevronRight
+  Menu, X, ChevronLeft, ChevronRight, Languages, Globe
 } from 'lucide-react';
 import Link from 'next/link';
 import '../app/globals.css';
@@ -21,6 +21,17 @@ interface Message {
   timestamp: number;
 }
 
+// Language Type
+type LanguageOption = 'english' | 'tamil';
+
+// User Data Interface
+interface UserData {
+  username: string;
+  chatHistory?: Message[][];
+  preferredLanguage?: LanguageOption;
+  // Add other user data fields as needed
+}
+
 export default function ChatbotPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -33,6 +44,7 @@ export default function ChatbotPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [theme, setTheme] = useState('dark');
   const [lastTranscript, setLastTranscript] = useState('');
+  const [language, setLanguage] = useState<LanguageOption>('english');
   
   useEffect(() => {
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
@@ -41,6 +53,10 @@ export default function ChatbotPage() {
       if (data) {
         setUserData(data);
         setChatHistory(data.chatHistory || []);
+        // Load saved language preference if available
+        if (data.preferredLanguage) {
+          setLanguage(data.preferredLanguage as LanguageOption);
+        }
       } else {
         router.push('/login');
       }
@@ -56,12 +72,18 @@ export default function ChatbotPage() {
   }, [messages]);
 
   useEffect(() => {
-    // Initialize speech recognition
+    // Initialize speech recognition with chosen language
     const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recog = new SpeechRecognition();
       recog.interimResults = true;
-      recog.lang = 'en-US';
+      
+      // Set language for speech recognition
+      if (language === 'tamil') {
+        recog.lang = 'ta-IN'; // Tamil language code
+      } else {
+        recog.lang = 'en-US'; // English language code
+      }
 
       recog.onresult = (event: SpeechRecognitionEvent) => {
         const transcript = event.results[0][0].transcript.trim();
@@ -75,7 +97,6 @@ export default function ChatbotPage() {
 
       recog.onend = () => {
         setIsListening(false);
-        startListening();
       };
 
       recog.onerror = (event: SpeechRecognitionError) => {
@@ -87,7 +108,26 @@ export default function ChatbotPage() {
     } else {
       console.error('Speech recognition not supported in this browser.');
     }
-  }, [lastTranscript]);
+  }, [language, lastTranscript]); // Re-initialize when language changes
+
+  const toggleLanguage = () => {
+    const newLanguage = language === 'english' ? 'tamil' : 'english';
+    setLanguage(newLanguage);
+    
+    // Save language preference
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    if (currentUser.username) {
+      updateUserData(currentUser.username, {
+        preferredLanguage: newLanguage
+      });
+    }
+    
+    // Stop and reset speech recognition to update language
+    if (isListening && recognition) {
+      recognition.stop();
+      setIsListening(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,7 +156,8 @@ export default function ChatbotPage() {
           history: updatedMessages.map(m => ({
             role: m.type,
             content: m.content
-          }))
+          })),
+          language: language // Send the selected language to the API
         }),
       });
 
@@ -161,9 +202,7 @@ export default function ChatbotPage() {
       const updatedHistory = messages.length === 0 
         ? [...chatHistory, messagesWithBot]
         : chatHistory.map(chat => 
-            chat.length > 0 && messages.length > 0 && chat[0].id === messages[0].id 
-              ? messagesWithBot 
-              : chat
+            chat[0]?.id === messages[0]?.id ? messagesWithBot : chat
           );
 
       setChatHistory(updatedHistory);
@@ -172,7 +211,8 @@ export default function ChatbotPage() {
       const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
       if (currentUser.username) {
         updateUserData(currentUser.username, {
-          chatHistory: updatedHistory
+          chatHistory: updatedHistory,
+          preferredLanguage: language
         });
       }
 
@@ -181,7 +221,9 @@ export default function ChatbotPage() {
       const errorMessage: Message = {
         id: crypto.randomUUID(),
         type: 'bot',
-        content: "I apologize, but I'm having trouble processing your message right now. Please try again later.",
+        content: language === 'tamil' 
+          ? "மன்னிக்கவும், தற்போது உங்கள் செய்தியை செயலாக்க எனக்கு சிரமம் உள்ளது. தயவுசெய்து பின்னர் முயற்சிக்கவும்."
+          : "I apologize, but I'm having trouble processing your message right now. Please try again later.",
         timestamp: Date.now()
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -209,22 +251,15 @@ export default function ChatbotPage() {
       });
     }
     
-    if (messages.length > 0 && messages[0].id === chatHistory[index][0].id) {
+    if (messages.length > 0 && messages[0]?.id === chatHistory[index][0]?.id) {
       setMessages([]);
     }
   };
 
   const startNewChat = () => {
-    const newChat: Message[] = [];
-    setMessages(newChat);
+    setMessages([]);
     
-    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    if (currentUser.username) {
-      updateUserData(currentUser.username, {
-        chatHistory: [...chatHistory, newChat]
-      });
-    }
-    
+    // Only update chat history if there are messages to save
     if (window.innerWidth < 768) {
       setSidebarOpen(false);
     }
@@ -248,13 +283,37 @@ export default function ChatbotPage() {
     setSidebarOpen(!sidebarOpen);
   };
 
-  // Quick Start Prompts
-  const quickStartPrompts = [
+  // Quick Start Prompts based on language
+  const quickStartPrompts = language === 'tamil' ? [
+    { text: "நான் சமீபத்தில் பதற்றமாக உணர்கிறேன். ஏன் என்று புரிந்துகொள்ள உதவ முடியுமா?", icon: <HeartPulse size={40} /> },
+    { text: "மன அழுத்தத்தை நிர்வகிப்பதற்கான சில பயனுள்ள நுட்பங்கள் என்ன?", icon: <Sparkles size={40} /> },
+    { text: "என் தூக்கத்தின் தரத்தை மேம்படுத்த விரும்புகிறேன். ஏதேனும் பரிந்துரைகள் உள்ளதா?", icon: <BookOpen size={40} /> },
+    { text: "நான் எவ்வாறு அதிக சுய-அன்பைப் பயிற்சி செய்ய முடியும்?", icon: <Brain size={40} /> }
+  ] : [
     { text: "I've been feeling anxious lately. Can you help me understand why?", icon: <HeartPulse size={40} /> },
     { text: "What are some effective techniques for managing stress?", icon: <Sparkles size={40} /> },
     { text: "I'd like to improve my sleep quality. Any suggestions?", icon: <BookOpen size={40} /> },
     { text: "How can I practice more self-compassion?", icon: <Brain size={40} /> }
   ];
+
+  // Get welcome text based on language
+  const getWelcomeText = () => {
+    if (language === 'tamil') {
+      return {
+        title: "உங்கள் மன நல துணையாளர்",
+        subtitle: "நான் கேட்க, ஆதரிக்க மற்றும் உங்கள் மன நல பயணத்தில் வழிகாட்ட இங்கே இருக்கிறேன். இன்று நான் எவ்வாறு உதவ முடியும்?",
+        promptsLabel: "இவற்றில் ஒன்றைக் கொண்டு தொடங்க முயற்சிக்கவும்:"
+      };
+    } else {
+      return {
+        title: "Your Mental Health Companion",
+        subtitle: "I'm here to listen, support, and provide guidance on your mental wellbeing journey. How can I assist you today?",
+        promptsLabel: "Try starting with one of these:"
+      };
+    }
+  };
+
+  const welcomeText = getWelcomeText();
 
   return (
     <div className={`h-[100dvh] w-full flex flex-col ${theme === 'dark' ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}`}>
@@ -269,10 +328,25 @@ export default function ChatbotPage() {
           </button>
           <div className="flex items-center gap-2">
             <Brain className={`w-6 h-6 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-600'}`} />
-            <span className="font-bold text-lg">Aura Therapy</span>
+            <span className="font-bold text-lg">Mind & Soul</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Language Toggle Button */}
+          <button
+            onClick={toggleLanguage}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-full ${
+              theme === 'dark' 
+                ? 'bg-slate-700 hover:bg-slate-600' 
+                : 'bg-slate-200 hover:bg-slate-300'
+            }`}
+          >
+            <Globe size={16} />
+            <span className="text-sm font-medium">
+              {language === 'english' ? 'தமிழ்' : 'English'}
+            </span>
+          </button>
+          
           <Link href="/dashboard" className={`p-2 rounded-full ${theme === 'dark' ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}>
             <LayoutDashboard size={20} />
           </Link>
@@ -305,7 +379,9 @@ export default function ChatbotPage() {
             >
               <div className="h-full flex flex-col">
                 <div className="flex items-center justify-between p-4 border-b border-slate-700">
-                  <h2 className="font-semibold">Chat History</h2>
+                  <h2 className="font-semibold">
+                    {language === 'tamil' ? 'அரட்டை வரலாறு' : 'Chat History'}
+                  </h2>
                   <button 
                     onClick={startNewChat}
                     className={`p-2 rounded-full ${theme === 'dark' ? 'bg-slate-700 hover:bg-slate-600' : 'bg-slate-200 hover:bg-slate-300'}`}
@@ -317,7 +393,7 @@ export default function ChatbotPage() {
                 <div className="flex-1 overflow-y-auto">
                   {chatHistory.length === 0 ? (
                     <div className="p-4 text-center text-sm text-slate-400">
-                      No conversation history yet
+                      {language === 'tamil' ? 'இதுவரை உரையாடல் வரலாறு இல்லை' : 'No conversation history yet'}
                     </div>
                   ) : (
                     <div className="space-y-1 p-2">
@@ -326,7 +402,7 @@ export default function ChatbotPage() {
                           key={index}
                           onClick={() => loadChat(chat)}
                           className={`p-3 rounded-lg cursor-pointer flex items-start justify-between ${
-                            messages.length > 0 && messages[0].id === chat[0]?.id
+                            messages.length > 0 && messages[0]?.id === chat[0]?.id
                               ? theme === 'dark' ? 'bg-purple-900/30' : 'bg-purple-100'
                               : theme === 'dark' ? 'hover:bg-slate-700' : 'hover:bg-slate-200'
                           }`}
@@ -335,13 +411,13 @@ export default function ChatbotPage() {
                             <div className="flex items-center gap-2">
                               <MessageCircle size={16} className={theme === 'dark' ? 'text-purple-400' : 'text-purple-600'} />
                               <p className="font-medium truncate">
-                                {chat[0]?.content?.substring(0, 20) || `Chat ${index + 1}`}
+                                {chat[0]?.content?.substring(0, 20) || (language === 'tamil' ? `உரையாடல் ${index + 1}` : `Chat ${index + 1}`)}
                               </p>
                             </div>
                             <p className="text-xs text-slate-400 mt-1 truncate">
                               {chat.length > 0 
                                 ? new Date(chat[0]?.timestamp || Date.now()).toLocaleString() 
-                                : 'New chat'}
+                                : language === 'tamil' ? 'புதிய உரையாடல்' : 'New chat'}
                             </p>
                           </div>
                           <button
@@ -377,15 +453,14 @@ export default function ChatbotPage() {
                     <div className="flex justify-center mb-4">
                       <HeartPulse size={48} className={`${theme === 'dark' ? 'text-purple-400' : 'text-purple-600'}`} />
                     </div>
-                    <h1 className="text-2xl font-bold mb-4">Your Mental Health Companion</h1>
+                    <h1 className="text-2xl font-bold mb-4">{welcomeText.title}</h1>
                     <p className="mb-6">
-                      I'm here to listen, support, and provide guidance on your mental wellbeing journey.
-                      How can I assist you today?
+                      {welcomeText.subtitle}
                     </p>
                   </div>
                   
                   <div className="space-y-2">
-                    <h3 className="font-medium">Try starting with one of these:</h3>
+                    <h3 className="font-medium">{welcomeText.promptsLabel}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       {quickStartPrompts.map((prompt, i) => (
                         <button 
@@ -437,7 +512,9 @@ export default function ChatbotPage() {
                           }`}>
                             <Bot size={14} className={theme === 'dark' ? 'text-purple-400' : 'text-purple-600'} />
                           </div>
-                          <span className="ml-2 text-sm font-medium">Assistant</span>
+                          <span className="ml-2 text-sm font-medium">
+                            {language === 'tamil' ? 'உதவியாளர்' : 'Assistant'}
+                          </span>
                         </div>
                       )}
                       <div className="whitespace-pre-wrap">{message.content}</div>
@@ -465,61 +542,57 @@ export default function ChatbotPage() {
                     }`}>
                       <Bot size={14} className={theme === 'dark' ? 'text-purple-400' : 'text-purple-600'} />
                     </div>
-                    <span className="ml-2 text-sm font-medium">Assistant</span>
+                    <span className="ml-2 text-sm font-medium">
+                      {language === 'tamil' ? 'உதவியாளர்' : 'Assistant'}
+                    </span>
                   </div>
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  <div className="flex items-center">
+                    <span className="animate-pulse">
+                      {language === 'tamil' ? 'பதிலளிக்கிறது...' : 'Responding...'}
+                    </span>
                   </div>
                 </div>
               </motion.div>
             )}
           </div>
           
-          {/* Input Box */}
-          <div className={`p-4 border-t ${theme === 'dark' ? 'border-slate-700' : 'border-slate-200'}`}>
-            <form onSubmit={handleSubmit} className="flex items-center gap-2">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Type your message..."
-                className={`flex-1 py-3 px-4 rounded-full border ${
-                  theme === 'dark' 
-                    ? 'bg-slate-800 border-slate-700 text-white placeholder:text-slate-400 focus:border-purple-500' 
-                    : 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-500 focus:border-purple-500'
-                } focus:outline-none focus:ring-1 focus:ring-purple-500`}
-                disabled={isLoading}
-              />
-              <button
-                type="button"
-                onClick={isListening ? stopListening : startListening}
-                className={`p-3 rounded-full ${
-                  isListening 
-                    ? 'bg-red-500 text-white' 
-                    : theme === 'dark'
-                      ? 'bg-slate-700 hover:bg-slate-600 text-white'
-                      : 'bg-slate-200 hover:bg-slate-300 text-slate-600'
-                }`}
-                disabled={isLoading}
-              >
-                <Mic size={20} />
-              </button>
+          {/* Input Area */}
+          <div className={`${theme === 'dark' ? 'bg-slate-800 border-t border-slate-700' : 'bg-white border-t border-slate-200'} p-4`}>
+            <form onSubmit={handleSubmit} className="flex gap-2">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={language === 'tamil' ? 'உங்கள் செய்தியை இங்கே உள்ளிடவும்...' : 'Type your message here...'}
+                  className={`w-full px-4 pr-12 py-3 rounded-full focus:outline-none ${
+                    theme === 'dark' 
+                      ? 'bg-slate-700 text-white placeholder:text-slate-400 focus:ring-1 focus:ring-purple-500' 
+                      : 'bg-slate-100 text-slate-900 placeholder:text-slate-500 focus:ring-1 focus:ring-purple-500'
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={isListening ? stopListening : startListening}
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full ${
+                    isListening 
+                      ? 'text-red-500' 
+                      : theme === 'dark' ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
+                  }`}
+                >
+                  <Mic size={18} className={isListening ? 'animate-pulse' : ''} />
+                </button>
+              </div>
               <button
                 type="submit"
-                className={`p-3 rounded-full ${
-                  theme === 'dark'
-                    ? 'bg-purple-600 hover:bg-purple-500 text-white'
-                    : 'bg-purple-500 hover:bg-purple-600 text-white'
-                }`}
                 disabled={isLoading || !input.trim()}
+                className={`p-3 rounded-full ${
+                  theme === 'dark' 
+                    ? 'bg-purple-600 hover:bg-purple-700 text-white disabled:bg-purple-900 disabled:text-slate-400' 
+                    : 'bg-purple-500 hover:bg-purple-600 text-white disabled:bg-purple-300 disabled:text-slate-100'
+                } flex-shrink-0`}
               >
-                {isLoading ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Send size={20} />
-                )}
+                <Send size={20} />
               </button>
             </form>
           </div>
