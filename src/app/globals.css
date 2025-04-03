@@ -1,6 +1,41 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes fogAnimation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.fog-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  opacity: 0.1;
+  background: linear-gradient(120deg, 
+    rgba(255, 255, 255, 0) 0%, 
+    rgba(255, 255, 255, 0.1) 25%, 
+    rgba(255, 255, 255, 0.2) 50%, 
+    rgba(255, 255, 255, 0.1) 75%, 
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 400% 400%;
+  animation: fogAnimation 15s ease infinite;
+  z-index: 1;
+}
 
 :root {
   --background: #ffffff;
