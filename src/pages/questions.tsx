@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, Check, ChevronRight, Star, Sparkles } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import '../app/globals.css';
+import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Camera, Check, ChevronRight, Star, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
+import "../app/globals.css";
 
 interface Question {
   question: string;
-  options: { 
-    emoji?: string; 
-    text: string; 
+  options: {
+    emoji?: string;
+    text: string;
     imageUrl?: string;
   }[];
   multiSelect?: boolean;
@@ -22,59 +22,80 @@ const questions: Question[] = [
     question: "🎉 Your ideal Friday night is…",
     options: [
       { emoji: "🍿", text: "Netflix, PJs, and snacks (I'm a cozy hermit!)" },
-      { emoji: "🥳", text: "Party with 100 strangers (The more chaos, the better!)" },
-      { emoji: "🎲", text: "Game night with close friends (Small circles rule!)" },
-      { emoji: "🚗", text: "Spontaneous road trip (Adventure is my middle name!)" }
-    ]
+      {
+        emoji: "🥳",
+        text: "Party with 100 strangers (The more chaos, the better!)",
+      },
+      {
+        emoji: "🎲",
+        text: "Game night with close friends (Small circles rule!)",
+      },
+      {
+        emoji: "🚗",
+        text: "Spontaneous road trip (Adventure is my middle name!)",
+      },
+    ],
   },
   {
     question: "🌱 How do you handle a super stressful day?",
     options: [
-      { emoji: "🍦", text: "Cry into a pint of ice cream (Emotions? I own them!)" },
+      {
+        emoji: "🍦",
+        text: "Cry into a pint of ice cream (Emotions? I own them!)",
+      },
       { emoji: "🧘", text: "Yoga + meditation (Zen mode activated.)" },
       { emoji: "💬", text: "Vent to your group chat (Drama = therapy.)" },
-      { emoji: "🎮", text: "Ignore it and play video games (Stress? Never heard of her.)" }
-    ]
+      {
+        emoji: "🎮",
+        text: "Ignore it and play video games (Stress? Never heard of her.)",
+      },
+    ],
   },
   {
     question: "If you were a meme, you'd be…",
     options: [
-      { 
+      {
         imageUrl: "/images/memes/meme1.jpg",
-        text: "\"This is fine\" dog in a burning room (I'm chill… mostly.)" 
+        text: '"This is fine" dog in a burning room (I\'m chill… mostly.)',
       },
-      { 
+      {
         imageUrl: "/images/memes/meme2.webp",
-        text: "\"Distracted boyfriend\" (Ooh, shiny!)" 
+        text: '"Distracted boyfriend" (Ooh, shiny!)',
       },
-      { 
+      {
         imageUrl: "/images/memes/meme3.jpg",
-        text: "\"Evil Kermit\" (I'm the devil on your shoulder.)" 
+        text: '"Evil Kermit" (I\'m the devil on your shoulder.)',
       },
-      { 
+      {
         imageUrl: "/images/memes/meme4.jpg",
-        text: "\"Drake rejecting veggies\" (I know what I want!)" 
-      }
-    ]
+        text: '"Drake rejecting veggies" (I know what I want!)',
+      },
+    ],
   },
   {
     question: "🧐 When making plans, you're the friend who…",
     options: [
-      { emoji: "📊", text: "Creates a color-coded spreadsheet (Organized or obsessed? Yes.)" },
-      { emoji: "🕊️", text: "Says \"Let's wing it!\" (Plans are for mortals.)" },
+      {
+        emoji: "📊",
+        text: "Creates a color-coded spreadsheet (Organized or obsessed? Yes.)",
+      },
+      { emoji: "🕊️", text: 'Says "Let\'s wing it!" (Plans are for mortals.)' },
       { emoji: "⏰", text: "Forgets until the last minute (Oops, my bad!)" },
-      { emoji: "👩", text: "Delegates tasks like a CEO (I'm the leader leader.)" }
-    ]
+      {
+        emoji: "👩",
+        text: "Delegates tasks like a CEO (I'm the leader leader.)",
+      },
+    ],
   },
   {
     question: "🚀 Your life motto is…",
     options: [
-      { emoji: "💤", text: "\"Sleep is my superpower\" (Nap champion!)" },
-      { emoji: "🤪", text: "\"Why be normal?\" (Chaotic good vibes!)" },
-      { emoji: "🧠", text: "\"Trust the process\" (Slow and steady!)" },
-      { emoji: "🚀", text: "\"Go big or go home\" (Maximum effort, always!)" }
-    ]
-  }
+      { emoji: "💤", text: '"Sleep is my superpower" (Nap champion!)' },
+      { emoji: "🤪", text: '"Why be normal?" (Chaotic good vibes!)' },
+      { emoji: "🧠", text: '"Trust the process" (Slow and steady!)' },
+      { emoji: "🚀", text: '"Go big or go home" (Maximum effort, always!)' },
+    ],
+  },
 ];
 
 export default function QuestionsPage() {
@@ -93,7 +114,10 @@ export default function QuestionsPage() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [taglines, setTaglines] = useState<string[]>([]);
-  const [particlePositions, setParticlePositions] = useState<{ top: string; left: string; size: number }[]>([]);
+  const [particlePositions, setParticlePositions] = useState<
+    { top: string; left: string; size: number }[]
+  >([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const positions = Array.from({ length: 15 }).map(() => ({
@@ -104,15 +128,15 @@ export default function QuestionsPage() {
     setParticlePositions(positions);
   }, []);
 
-  const progress = ((currentQuestion) / questions.length) * 100;
+  const progress = (currentQuestion / questions.length) * 100;
 
   const handleAnswer = (value: number) => {
     const currentQ = questions[currentQuestion];
-    
+
     if (currentQ.multiSelect) {
       const newMultiAnswers = [...multiSelectAnswers];
       const index = newMultiAnswers.indexOf(value);
-      
+
       if (index > -1) {
         newMultiAnswers.splice(index, 1);
       } else {
@@ -120,13 +144,13 @@ export default function QuestionsPage() {
           newMultiAnswers.push(value);
         }
       }
-      
+
       setMultiSelectAnswers(newMultiAnswers);
       setAnswers({ ...answers, [currentQuestion]: newMultiAnswers });
     } else {
       setAnswers({ ...answers, [currentQuestion]: value });
       if (currentQuestion < questions.length - 1) {
-        setTimeout(() => setCurrentQuestion(c => c + 1), 300);
+        setTimeout(() => setCurrentQuestion((c) => c + 1), 300);
       }
     }
   };
@@ -134,8 +158,9 @@ export default function QuestionsPage() {
   const startRecording = async () => {
     try {
       // Initialize audio context
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      
+      audioContextRef.current = new (window.AudioContext ||
+        (window as any).webkitAudioContext)();
+
       // Get both audio and video streams
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -143,232 +168,301 @@ export default function QuestionsPage() {
           noiseSuppression: true,
           sampleRate: 44100,
         },
-        video: true
+        video: true,
       });
       streamRef.current = stream;
-  
+
       // Setup video element
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play().catch(e => console.error('Video play error:', e));
+        videoRef.current
+          .play()
+          .catch((e) => console.error("Video play error:", e));
       }
-  
+
       // Create media recorder for audio
       const audioStream = new MediaStream(stream.getAudioTracks());
-      const audioOptions = { mimeType: 'audio/webm' };
+      const audioOptions = { mimeType: "audio/webm" };
       mediaRecorderRef.current = new MediaRecorder(audioStream, audioOptions);
-  
+
       // Create media recorder for video
       const videoStream = new MediaStream(stream.getVideoTracks());
-      const videoOptions = { mimeType: 'video/webm;codecs=vp9' };
+      const videoOptions = { mimeType: "video/webm;codecs=vp9" };
       const videoRecorder = new MediaRecorder(videoStream, videoOptions);
-      
+
       // Reset chunks
       audioChunksRef.current = [];
       const videoChunks: Blob[] = [];
-  
+
       // Audio recorder setup
       mediaRecorderRef.current.ondataavailable = (e) => {
         if (e.data.size > 0) {
           audioChunksRef.current.push(e.data);
         }
       };
-  
+
       // Video recorder setup
       videoRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
           videoChunks.push(e.data);
         }
       };
-  
+
       mediaRecorderRef.current.onstop = async () => {
         // Combine all audio chunks
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: "audio/webm",
+        });
+
         // Convert to WAV
         try {
           const wavBlob = await convertToWav(audioBlob);
           setAudioBlob(wavBlob);
         } catch (error) {
-          console.error('Error converting to WAV:', error);
+          console.error("Error converting to WAV:", error);
         }
       };
-  
+
       videoRecorder.onstop = () => {
-        const videoBlob = new Blob(videoChunks, { type: 'video/webm' });
+        const videoBlob = new Blob(videoChunks, { type: "video/webm" });
         setVideoBlob(videoBlob);
       };
-  
+
       // Start both recorders
       mediaRecorderRef.current.start(100); // Collect data every 100ms
       videoRecorder.start(100);
       setIsRecording(true);
-  
+
       // Store video recorder reference
-      mediaRecorderRef.current['videoRecorder'] = videoRecorder;
-  
+      mediaRecorderRef.current["videoRecorder"] = videoRecorder;
     } catch (err) {
-      console.error('Error accessing media devices:', err);
+      console.error("Error accessing media devices:", err);
       stopRecording();
     }
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== "inactive"
+    ) {
       mediaRecorderRef.current.stop();
-      
+
       // Stop the video recorder if it exists
-      if (mediaRecorderRef.current['videoRecorder']) {
-        mediaRecorderRef.current['videoRecorder'].stop();
+      if (mediaRecorderRef.current["videoRecorder"]) {
+        mediaRecorderRef.current["videoRecorder"].stop();
       }
     }
-  
+
     // Stop all tracks
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach((track) => track.stop());
     }
-  
+
     setIsRecording(false);
   };
-  
 
   const convertToWav = async (audioBlob: Blob): Promise<Blob> => {
     if (!audioContextRef.current) {
-      throw new Error('AudioContext not initialized');
+      throw new Error("AudioContext not initialized");
     }
-  
+
     const arrayBuffer = await audioBlob.arrayBuffer();
-    const audioBuffer = await audioContextRef.current.decodeAudioData(arrayBuffer);
-    
+    const audioBuffer = await audioContextRef.current.decodeAudioData(
+      arrayBuffer
+    );
+
     // Create WAV file from audio buffer
     const wavBlob = encodeWAV(audioBuffer);
     return wavBlob;
   };
 
   const encodeWAV = (audioBuffer: AudioBuffer): Blob => {
-  const numChannels = audioBuffer.numberOfChannels;
-  const sampleRate = audioBuffer.sampleRate;
-  const length = audioBuffer.length;
-  const bitsPerSample = 16;
-  const bytesPerSample = bitsPerSample / 8;
-  const blockAlign = numChannels * bytesPerSample;
-  const byteRate = sampleRate * blockAlign;
-  const dataSize = length * blockAlign;
+    const numChannels = audioBuffer.numberOfChannels;
+    const sampleRate = audioBuffer.sampleRate;
+    const length = audioBuffer.length;
+    const bitsPerSample = 16;
+    const bytesPerSample = bitsPerSample / 8;
+    const blockAlign = numChannels * bytesPerSample;
+    const byteRate = sampleRate * blockAlign;
+    const dataSize = length * blockAlign;
 
-  // Buffer size: 44 bytes for header + audio data
-  const buffer = new ArrayBuffer(44 + dataSize);
-  const view = new DataView(buffer);
+    // Buffer size: 44 bytes for header + audio data
+    const buffer = new ArrayBuffer(44 + dataSize);
+    const view = new DataView(buffer);
 
-  // Helper function to write strings to the DataView
-  const writeString = (view: DataView, offset: number, string: string) => {
-    for (let i = 0; i < string.length; i++) {
-      view.setUint8(offset + i, string.charCodeAt(i));
+    // Helper function to write strings to the DataView
+    const writeString = (view: DataView, offset: number, string: string) => {
+      for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+      }
+    };
+
+    // Write WAV header
+    writeString(view, 0, "RIFF");
+    view.setUint32(4, 36 + dataSize, true); // File size - 8
+    writeString(view, 8, "WAVE");
+    writeString(view, 12, "fmt ");
+    view.setUint32(16, 16, true); // Subchunk1Size (16 for PCM)
+    view.setUint16(20, 1, true); // AudioFormat (1 for PCM)
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, byteRate, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, bitsPerSample, true);
+    writeString(view, 36, "data");
+    view.setUint32(40, dataSize, true);
+
+    // Write PCM audio data
+    let offset = 44;
+    for (let i = 0; i < length; i++) {
+      for (let channel = 0; channel < numChannels; channel++) {
+        const sample = Math.max(
+          -1,
+          Math.min(1, audioBuffer.getChannelData(channel)[i])
+        );
+        view.setInt16(
+          offset,
+          sample < 0 ? sample * 0x8000 : sample * 0x7fff,
+          true
+        );
+        offset += 2;
+      }
     }
+
+    return new Blob([view], { type: "audio/wav" });
   };
 
-  // Write WAV header
-  writeString(view, 0, 'RIFF');
-  view.setUint32(4, 36 + dataSize, true); // File size - 8
-  writeString(view, 8, 'WAVE');
-  writeString(view, 12, 'fmt ');
-  view.setUint32(16, 16, true); // Subchunk1Size (16 for PCM)
-  view.setUint16(20, 1, true); // AudioFormat (1 for PCM)
-  view.setUint16(22, numChannels, true);
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, byteRate, true);
-  view.setUint16(32, blockAlign, true);
-  view.setUint16(34, bitsPerSample, true);
-  writeString(view, 36, 'data');
-  view.setUint32(40, dataSize, true);
+  const LoadingComponent = () => (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center"
+    >
+      <div className="text-center">
+        <motion.div
+          animate={{
+            scale: [1, 1.2, 1],
+            rotate: [0, 180, 360],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="w-20 h-20 mx-auto mb-4"
+        >
+          <Sparkles className="w-full h-full text-purple-500" />
+        </motion.div>
+        <h2 className="text-2xl font-bold text-white mb-2">
+          Analyzing Your Responses
+        </h2>
+        <p className="text-gray-300">
+          We're crafting personalized insights just for you...
+        </p>
+        <div className="mt-4 flex justify-center gap-2">
+          {[0, 1, 2].map((i) => (
+            <motion.div
+              key={i}
+              className="w-2 h-2 bg-purple-500 rounded-full"
+              animate={{
+                y: [0, -10, 0],
+              }}
+              transition={{
+                duration: 1,
+                repeat: Infinity,
+                delay: i * 0.2,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
 
-  // Write PCM audio data
-  let offset = 44;
-  for (let i = 0; i < length; i++) {
-    for (let channel = 0; channel < numChannels; channel++) {
-      const sample = Math.max(-1, Math.min(1, audioBuffer.getChannelData(channel)[i]));
-      view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
-      offset += 2;
+  const handleSubmit = async () => {
+    if (!videoBlob) {
+      console.error("No video recorded");
+      return;
     }
-  }
 
-  return new Blob([view], { type: 'audio/wav' });
-};
- 
+    setIsLoading(true);
 
-const handleSubmit = async () => {
-  if (!videoBlob) {
-    console.error('No video recorded');
-    return;
-  }
+    const formData = new FormData();
+    formData.append("answers", JSON.stringify(Object.values(answers)));
+    formData.append("description", description);
+    formData.append(
+      "video",
+      new File([videoBlob], "video.webm", {
+        type: "video/webm",
+      })
+    );
 
-  const formData = new FormData();
-  formData.append('answers', JSON.stringify(Object.values(answers))); // Append the answers with questions
-  
-  formData.append('description', description);
-  
-  // Add video file
-  formData.append('video', new File([videoBlob], 'video.webm', { 
-    type: 'video/webm' 
-  }));
-  
-  // Add audio file if available
-  if (audioBlob) {
-    formData.append('audio', new File([audioBlob], 'audio.wav', { 
-      type: 'audio/wav' 
-    }));
-  }
+    if (audioBlob) {
+      formData.append(
+        "audio",
+        new File([audioBlob], "audio.wav", {
+          type: "audio/wav",
+        })
+      );
+    }
 
-  try {
-    const response = await fetch('/api/submit', {
-      method: 'POST',
-      body: formData,
-    });
+    try {
+      const response = await fetch("/api/submit", {
+        method: "POST",
+        body: formData,
+      });
 
-    if (!response.ok) throw new Error('Network response was not ok');
-    
-    const result = await response.json();
-    console.log('Submission successful:', result);
+      if (!response.ok) throw new Error("Network response was not ok");
 
-    // Generate taglines using the returned analysis data
-    const { textAnalysis, audioAnalysis, videoAnalysis, answers, description } = result;
+      const result = await response.json();
+      console.log("Submission successful:", result);
 
-    const taglineResponse = await fetch('/api/generate-taglines', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+      const {
         textAnalysis,
         audioAnalysis,
         videoAnalysis,
         answers,
         description,
-      }),
-    });
+      } = result;
 
-    if (!taglineResponse.ok) throw new Error('Tagline generation failed');
-    
-    const taglineResult = await taglineResponse.json();
-    console.log('Taglines generated:', taglineResult.taglines);
+      const taglineResponse = await fetch("/api/generate-taglines", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          textAnalysis,
+          audioAnalysis,
+          videoAnalysis,
+          answers,
+          description,
+        }),
+      });
 
-    // Store taglines in local storage
-    localStorage.setItem('recommendationTaglines', JSON.stringify(taglineResult.taglines));
+      if (!taglineResponse.ok) throw new Error("Tagline generation failed");
 
-    // Update the state to trigger re-render
-    
-    localStorage.removeItem('videosData');
-    localStorage.removeItem('musicData');
-    localStorage.removeItem('completedSuggestions');
+      const taglineResult = await taglineResponse.json();
+      console.log("Taglines generated:", taglineResult.taglines);
 
-    // Redirect to suggestions page
-    router.push('/suggestions');
-  } catch (error) {
-    console.error('Error submitting form:', error);
-  }
-};
+      localStorage.setItem(
+        "recommendationTaglines",
+        JSON.stringify(taglineResult.taglines)
+      );
+      localStorage.removeItem("videosData");
+      localStorage.removeItem("musicData");
+      localStorage.removeItem("completedSuggestions");
+
+      router.push("/suggestions");
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      setIsLoading(false);
+    }
+  };
   const nextQuestion = () => {
     if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(c => c + 1);
+      setCurrentQuestion((c) => c + 1);
     } else {
       setShowTextInput(true);
     }
@@ -376,7 +470,7 @@ const handleSubmit = async () => {
 
   useEffect(() => {
     // Retrieve taglines from local storage when the component mounts
-    const storedTaglines = localStorage.getItem('taglines');
+    const storedTaglines = localStorage.getItem("taglines");
     if (storedTaglines) {
       setTaglines(JSON.parse(storedTaglines));
     }
@@ -384,9 +478,12 @@ const handleSubmit = async () => {
     // Clean up on unmount
     return () => {
       if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current.getTracks().forEach((track) => track.stop());
       }
-      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      if (
+        audioContextRef.current &&
+        audioContextRef.current.state !== "closed"
+      ) {
         audioContextRef.current.close();
       }
     };
@@ -394,6 +491,7 @@ const handleSubmit = async () => {
 
   return (
     <div className="min-h-[100dvh] w-full bg-gradient-to-br from-black via-gray-900 to-gray-800 text-white overflow-hidden relative flex flex-col moving-background">
+      {isLoading && <LoadingComponent />}
       {/* Floating particles background */}
       <div className="fixed inset-0 z-0">
         {particlePositions.map((position, i) => (
@@ -414,7 +512,7 @@ const handleSubmit = async () => {
               duration: Math.random() * 15 + 5,
               repeat: Infinity,
               repeatType: "reverse",
-              ease: "easeInOut"
+              ease: "easeInOut",
             }}
           />
         ))}
@@ -423,7 +521,7 @@ const handleSubmit = async () => {
       {/* Main container with flex column to use full height */}
       <div className="w-full max-w-6xl mx-auto px-4 pt-4 pb-4 flex flex-col flex-1 relative z-10">
         {/* Reduced top margin for header */}
-        <motion.div 
+        <motion.div
           className="text-center mb-3"
           initial={{ y: -30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -434,7 +532,9 @@ const handleSubmit = async () => {
               Personality Quest
             </span>
           </h1>
-          <p className="text-purple-300 text-lg">Discover your inner potential & unlock your hidden talents</p>
+          <p className="text-purple-300 text-lg">
+            Discover your inner potential & unlock your hidden talents
+          </p>
         </motion.div>
 
         {/* Slimmer progress bar */}
@@ -476,10 +576,10 @@ const handleSubmit = async () => {
                   {/* Options with scrollable area - flex-1 to take available space */}
                   <div className="p-3  overflow-y-auto space-y-2">
                     {questions[currentQuestion].options.map((option, index) => {
-                      const isSelected = questions[currentQuestion].multiSelect 
+                      const isSelected = questions[currentQuestion].multiSelect
                         ? multiSelectAnswers.includes(index)
                         : answers[currentQuestion] === index;
-                      
+
                       return (
                         <motion.button
                           key={index}
@@ -487,39 +587,45 @@ const handleSubmit = async () => {
                           whileHover={{ scale: 1.01 }}
                           whileTap={{ scale: 0.99 }}
                           className={`w-full p-3 rounded-lg ${
-                            isSelected 
-                              ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
-                              : 'bg-gray-900/70 hover:bg-gray-800 border border-gray-700'
+                            isSelected
+                              ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white"
+                              : "bg-gray-900/70 hover:bg-gray-800 border border-gray-700"
                           } transition-all flex items-center gap-3`}
                         >
                           {isSelected && (
-                            <motion.div 
+                            <motion.div
                               className="absolute inset-0 bg-blue-500/10 rounded-lg"
                               initial={{ opacity: 0 }}
                               animate={{ opacity: [0, 0.5, 0] }}
                               transition={{ duration: 2, repeat: Infinity }}
                             />
                           )}
-                          
+
                           <div className="flex items-center justify-center bg-gray-900 w-10 h-10 rounded-lg shrink-0">
                             {option.emoji && (
                               <span className="text-2xl">{option.emoji}</span>
                             )}
                             {option.imageUrl && (
-                              <img 
-                                src={option.imageUrl} 
-                                alt={option.text} 
+                              <img
+                                src={option.imageUrl}
+                                alt={option.text}
                                 className="w-10 h-10 object-cover rounded"
                               />
                             )}
                           </div>
-                          
-                          <span className="text-left flex-1">{option.text}</span>
-                          
-                          <div className={`w-6 h-6 flex items-center justify-center rounded-full shrink-0
-                            ${isSelected 
-                              ? 'bg-white text-blue-600' 
-                              : 'bg-gray-800 border border-gray-600'}`}>
+
+                          <span className="text-left flex-1">
+                            {option.text}
+                          </span>
+
+                          <div
+                            className={`w-6 h-6 flex items-center justify-center rounded-full shrink-0
+                            ${
+                              isSelected
+                                ? "bg-white text-blue-600"
+                                : "bg-gray-800 border border-gray-600"
+                            }`}
+                          >
                             {isSelected && <Check size={12} />}
                           </div>
                         </motion.button>
@@ -531,28 +637,31 @@ const handleSubmit = async () => {
                   <div className="p-3 border-t border-gray-800 flex justify-between items-center">
                     <div className="flex space-x-1">
                       {questions.map((_, idx) => (
-                        <div 
-                          key={idx} 
+                        <div
+                          key={idx}
                           className={`w-2 h-2 rounded-full ${
-                            idx === currentQuestion 
-                              ? 'bg-purple-500' 
-                              : idx < currentQuestion 
-                                ? 'bg-blue-500' 
-                                : 'bg-gray-700'
+                            idx === currentQuestion
+                              ? "bg-purple-500"
+                              : idx < currentQuestion
+                              ? "bg-blue-500"
+                              : "bg-gray-700"
                           }`}
                         />
                       ))}
                     </div>
-                    
-                    {(!questions[currentQuestion].multiSelect || 
-                      (questions[currentQuestion].multiSelect && multiSelectAnswers.length > 0)) && (
+
+                    {(!questions[currentQuestion].multiSelect ||
+                      (questions[currentQuestion].multiSelect &&
+                        multiSelectAnswers.length > 0)) && (
                       <motion.button
                         onClick={nextQuestion}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all flex items-center gap-2"
                       >
-                        {currentQuestion === questions.length - 1 ? 'Finish' : 'Next'} 
+                        {currentQuestion === questions.length - 1
+                          ? "Finish"
+                          : "Next"}
                         <ChevronRight size={16} />
                       </motion.button>
                     )}
@@ -573,7 +682,7 @@ const handleSubmit = async () => {
                       Final Step: Tell Us More
                     </h2>
                   </div>
-                  
+
                   <div className="p-3 space-y-4 overflow-y-auto">
                     <div className="space-y-2">
                       <p className="text-purple-300">
@@ -586,23 +695,22 @@ const handleSubmit = async () => {
                         placeholder="I'm feeling stuck with my career choices..."
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <p className="text-purple-300 flex items-center">
                         <Camera className="mr-2 text-purple-400" size={16} />
                         Record your message Here:
                       </p>
-                      
-                      
+
                       <motion.button
                         type="button"
                         onClick={isRecording ? stopRecording : startRecording}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors w-full ${
-                          isRecording 
-                            ? 'bg-red-600 text-white' 
-                            : 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
+                          isRecording
+                            ? "bg-red-600 text-white"
+                            : "bg-gradient-to-r from-purple-600 to-blue-600 text-white"
                         }`}
                       >
                         {isRecording ? (
@@ -617,15 +725,23 @@ const handleSubmit = async () => {
                           </>
                         )}
                       </motion.button>
-                      
+
                       {!isRecording && (videoBlob || audioBlob) && (
                         <div className="space-y-2 mt-2">
                           {videoBlob && (
                             <div className="text-xs bg-gray-800 p-2 rounded-lg flex items-center gap-2">
                               <Check className="text-green-400" size={12} />
-                              <span>Video recorded ({Math.round(videoBlob.size / 1024)} KB)</span>
-                              <button 
-                                onClick={() => window.open(URL.createObjectURL(videoBlob), '_blank')}
+                              <span>
+                                Video recorded (
+                                {Math.round(videoBlob.size / 1024)} KB)
+                              </span>
+                              <button
+                                onClick={() =>
+                                  window.open(
+                                    URL.createObjectURL(videoBlob),
+                                    "_blank"
+                                  )
+                                }
                                 className="text-blue-400 hover:underline ml-auto"
                               >
                                 Preview
@@ -635,10 +751,15 @@ const handleSubmit = async () => {
                           {audioBlob && (
                             <div className="text-xs bg-gray-800 p-2 rounded-lg flex items-center gap-2">
                               <Check className="text-green-400" size={12} />
-                              <span>Audio recorded ({Math.round(audioBlob.size / 1024)} KB)</span>
-                              <button 
+                              <span>
+                                Audio recorded (
+                                {Math.round(audioBlob.size / 1024)} KB)
+                              </span>
+                              <button
                                 onClick={() => {
-                                  const audio = new Audio(URL.createObjectURL(audioBlob));
+                                  const audio = new Audio(
+                                    URL.createObjectURL(audioBlob)
+                                  );
                                   audio.play();
                                 }}
                                 className="text-blue-400 hover:underline ml-auto"
@@ -651,7 +772,7 @@ const handleSubmit = async () => {
                       )}
                     </div>
                   </div>
-                  
+
                   <div className="p-3 border-t border-gray-800">
                     <motion.button
                       className="w-full bg-gradient-to-r from-purple-500 to-blue-600 text-white py-3 rounded-lg hover:shadow-lg transition-colors font-bold"
@@ -668,7 +789,7 @@ const handleSubmit = async () => {
           </div>
 
           {/* Right section: Insights */}
-          <motion.div 
+          <motion.div
             className="w-full md:w-1/3 flex flex-col gap-3 max-h-full"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -681,7 +802,7 @@ const handleSubmit = async () => {
                   Your Personality Insights
                 </h2>
               </div>
-              
+
               <div className="p-3 space-y-2">
                 {Object.keys(answers).length === 0 ? (
                   <p className="text-gray-400 italic">
@@ -692,20 +813,30 @@ const handleSubmit = async () => {
                     {[
                       { title: "Your Cosmic Twin", value: "Tony Stark" },
                       { title: "Your Spirit Animal", value: "A Strategic Fox" },
-                      { title: "Your Superpower", value: "Turning Ideas Into Reality" }
+                      {
+                        title: "Your Superpower",
+                        value: "Turning Ideas Into Reality",
+                      },
                     ].map((item, idx) => (
-                      <div key={idx} className="bg-gray-800/50 p-3 rounded-lg flex justify-between items-center">
+                      <div
+                        key={idx}
+                        className="bg-gray-800/50 p-3 rounded-lg flex justify-between items-center"
+                      >
                         <span className="text-purple-300">{item.title}</span>
-                        <span className="text-white font-medium">{item.value}</span>
+                        <span className="text-white font-medium">
+                          {item.value}
+                        </span>
                       </div>
                     ))}
-                    
+
                     <div className="mt-3 bg-blue-900/20 border border-blue-800/30 rounded-lg p-2">
                       <h3 className="text-blue-300 text-xs uppercase font-bold mb-1">
                         Completion Stats
                       </h3>
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-300 text-xs">Questions Completed</span>
+                        <span className="text-gray-300 text-xs">
+                          Questions Completed
+                        </span>
                         <span className="text-white text-xs font-medium">
                           {Object.keys(answers).length} / {questions.length}
                         </span>
@@ -715,7 +846,7 @@ const handleSubmit = async () => {
                 )}
               </div>
             </div>
-            
+
             {/* Tips section - larger text for better readability */}
             <div className="bg-gradient-to-b from-gray-900 to-black rounded-xl overflow-hidden shadow-xl border border-gray-800 flex-1">
               <div className="p-3">
@@ -733,7 +864,9 @@ const handleSubmit = async () => {
                   </li>
                   <li className="flex gap-2 items-center">
                     <span className="text-blue-400 text-xl">•</span>
-                    <p>Add details in the final step for personalized insights</p>
+                    <p>
+                      Add details in the final step for personalized insights
+                    </p>
                   </li>
                 </ul>
               </div>
@@ -745,10 +878,14 @@ const handleSubmit = async () => {
       {/* Display taglines if available */}
       {taglines.length > 0 && (
         <div className="p-4 bg-gray-800 rounded-lg mt-4">
-          <h2 className="text-lg font-bold text-purple-300">Generated Taglines:</h2>
+          <h2 className="text-lg font-bold text-purple-300">
+            Generated Taglines:
+          </h2>
           <ul className="list-disc pl-5">
             {taglines.map((tagline, index) => (
-              <li key={index} className="text-gray-300">{tagline}</li>
+              <li key={index} className="text-gray-300">
+                {tagline}
+              </li>
             ))}
           </ul>
         </div>
