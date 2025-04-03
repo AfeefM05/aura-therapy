@@ -269,7 +269,7 @@ export default function ChatbotPage() {
           </button>
           <div className="flex items-center gap-2">
             <Brain className={`w-6 h-6 ${theme === 'dark' ? 'text-purple-400' : 'text-purple-600'}`} />
-            <span className="font-bold text-lg">Mind & Soul</span>
+            <span className="font-bold text-lg">Aura Therapy</span>
           </div>
         </div>
         <div className="flex items-center gap-2">

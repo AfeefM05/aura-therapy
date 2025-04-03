@@ -17,7 +17,7 @@ export function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-gray-900/80 backdrop-blur-xl border-b border-gray-800 shadow-lg">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <Link href="/" className="text-2xl font-bold text-gray-100 flex items-center gap-2">
-          Mind & Soul
+          Aura Therapy
         </Link>
         
         <div className="flex items-center gap-6">

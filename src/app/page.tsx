@@ -283,7 +283,7 @@ export default function Home() {
           >
             <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-xl">
               <h1 className="text-4xl md:text-5xl font-serif mb-6 text-white">
-                Mind & Soul
+                Aura Therapy
               </h1>
               <p className="text-lg text-gray-300 mb-8 leading-relaxed">
                 Welcome to a space of tranquility and self-discovery. Our
