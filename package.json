@@ -19,6 +19,7 @@
     "@radix-ui/react-slot": "^1.1.2",
     "@react-three/drei": "^10.0.5",
     "@react-three/fiber": "^9.1.0",
+    "@vapi-ai/web": "^2.2.5",
     "ai": "^4.2.8",
     "axios": "^1.8.4",
     "chart.js": "^4.4.8",

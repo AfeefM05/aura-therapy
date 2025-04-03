@@ -115,7 +115,6 @@ export default function SuggestionsPage() {
         
         if (cachedData) {
           setState(JSON.parse(cachedData));
-          return;
         }
 
         // Fetch the data from the YouTube API

@@ -161,7 +161,9 @@ export default function ChatbotPage() {
       const updatedHistory = messages.length === 0 
         ? [...chatHistory, messagesWithBot]
         : chatHistory.map(chat => 
-            chat[0].id === messages[0].id ? messagesWithBot : chat
+            chat.length > 0 && messages.length > 0 && chat[0].id === messages[0].id 
+              ? messagesWithBot 
+              : chat
           );
 
       setChatHistory(updatedHistory);
