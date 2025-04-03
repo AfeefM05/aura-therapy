@@ -35,7 +35,7 @@ function BuddhaModel() {
   //     envMapIntensity: 0.8,
   //   });
 
-    // Apply the material to all meshes
+  // Apply the material to all meshes
   //   scene.traverse((child) => {
   //     if (child instanceof THREE.Mesh) {
   //       child.material = material;
@@ -94,14 +94,14 @@ const SoftWindEffect = () => {
           className="absolute opacity-20"
           style={{
             transform: props.xys.to(trans),
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
+            left: `${i * 12.5 + 5}%`,
+            top: `${i * 12.5 + 5}%`,
             transition: "all 3s ease-out",
           }}
         >
           <svg
-            width={30 + Math.random() * 20}
-            height={30 + Math.random() * 20}
+            width="40"
+            height="40"
             viewBox="0 0 24 24"
             fill="white"
             xmlns="http://www.w3.org/2000/svg"
@@ -119,7 +119,6 @@ export default function Home() {
   const router = useRouter();
   const { scrollYProgress } = useScroll();
   const [particlesLoaded, setParticlesLoaded] = useState(false);
-  const [showIntro, setShowIntro] = useState(false);
 
   useEffect(() => {
     setTimeout(() => setParticlesLoaded(true), 1000);
@@ -127,19 +126,6 @@ export default function Home() {
 
   const particlesInit = useCallback(async (engine: Engine) => {
     await loadSlim(engine);
-  }, []);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 100) {
-        setShowIntro(true);
-      } else {
-        setShowIntro(false);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const leavesParticlesOptions = {
@@ -262,239 +248,157 @@ export default function Home() {
         />
       )}
 
-      {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-black/30 backdrop-blur-lg border-b border-white/10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="text-2xl font-bold text-white">512D</div>
-            <div className="flex items-center gap-6">
-              <a
-                href="#features"
-                className="text-white/80 hover:text-white transition-colors"
-              >
-                Features
-              </a>
-              <a
-                href="#about"
-                className="text-white/80 hover:text-white transition-colors"
-              >
-                About
-              </a>
-              <a
-                href="#contact"
-                className="text-white/80 hover:text-white transition-colors"
-              >
-                Contact
-              </a>
+      {/* Combined Buddha and Intro Section */}
+      <div className="h-screen flex items-center justify-center pt-0">
+        <div className="w-full flex items-center justify-between gap-8">
+          {/* Buddha Section */}
+          <div className="w-1/2">
+            <div className="h-[600px] relative">
+              <Canvas camera={{ position: [10, 0, 0], fov: 50 }} shadows>
+                {/* Main ambient light */}
+                <ambientLight intensity={0.5} color="#ffffff" />
+
+                {/* Main directional light */}
+                <directionalLight
+                  position={[5, 5, 5]}
+                  intensity={2}
+                  color="#ffffff"
+                  castShadow
+                />
+
+                {/* Bright spot light */}
+                <spotLight
+                  position={[10, 10, 10]}
+                  angle={0.15}
+                  penumbra={1}
+                  intensity={10}
+                  color="#ffffff"
+                  castShadow
+                />
+
+                {/* Warm accent light */}
+                <pointLight
+                  position={[5, 5, -5]}
+                  intensity={1}
+                  color="#ffcc99"
+                />
+
+                <fog attach="fog" args={["#000000", 15, 25]} />
+
+                {/* Scene components */}
+                <Suspense fallback={null}>
+                  <BuddhaModel />
+                </Suspense>
+                <OrbitControls
+                  enableZoom={false}
+                  maxPolarAngle={Math.PI / 2}
+                  minPolarAngle={Math.PI / 3}
+                />
+              </Canvas>
             </div>
           </div>
-        </div>
-      </nav>
 
-      <div className="container mx-auto px-4 pt-16">
-        {/* Initial Buddha View - Big and Centered */}
-        <div
-          className={`h-screen flex items-center justify-center transition-all duration-500 ${
-            showIntro ? "opacity-0" : "opacity-100"
-          }`}
-        >
-          <div className="h-[800px] w-full max-w-5xl relative">
-            <Canvas camera={{ position: [10, 0, 0], fov: 50 }} shadows>
-              {/* Main ambient light */}
-              <ambientLight intensity={0.5} color="#ffffff" />
+          {/* Intro Section */}
+          <motion.div
+            initial={{ opacity: 0, x: 100 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8 }}
+            className="w-1/2"
+          >
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-xl">
+              <h1 className="text-4xl md:text-5xl font-serif mb-6 text-white">
+                Mind & Soul
+              </h1>
+              <p className="text-lg text-gray-300 mb-8 leading-relaxed">
+                Welcome to a space of tranquility and self-discovery. Our
+                AI-powered platform offers personalized guidance for your mental
+                well-being journey.
+              </p>
 
-              {/* Main directional light */}
-              <directionalLight
-                position={[5, 5, 5]}
-                intensity={1.5}
-                color="#ffffff"
-                castShadow
-              />
-
-              {/* Bright spot light */}
-              <spotLight
-                position={[10, 10, 10]}
-                angle={0.15}
-                penumbra={1}
-                intensity={6}
-                color="#ffffff"
-                castShadow
-              />
-
-              {/* Warm accent light */}
-              <pointLight position={[5, 5, -5]} intensity={1} color="#ffcc99" />
-
-              <fog attach="fog" args={["#000000", 15, 25]} />
-
-              {/* Scene components */}
-              <Suspense fallback={null}>
-                <BuddhaModel />
-              </Suspense>
-              <OrbitControls
-                enableZoom={false}
-                maxPolarAngle={Math.PI / 2}
-                minPolarAngle={Math.PI / 3}
-              />
-            </Canvas>
-          </div>
-        </div>
-
-        {/* Combined Buddha and Intro Section */}
-        <div
-          className={`h-screen flex items-center justify-center transition-all duration-500 ${
-            showIntro ? "opacity-100" : "opacity-0"
-          }`}
-        >
-          <div className="w-full flex items-center justify-between gap-8">
-            {/* Buddha Section */}
-            <div className="w-1/2">
-              <div className="h-[600px] relative">
-                <Canvas camera={{ position: [10, 0, 0], fov: 50 }} shadows>
-                  {/* Main ambient light */}
-                  <ambientLight intensity={0.5} color="#ffffff" />
-
-                  {/* Main directional light */}
-                  <directionalLight
-                    position={[5, 5, 5]}
-                    intensity={2}
-                    color="#ffffff"
-                    castShadow
-                  />
-
-                  {/* Bright spot light */}
-                  <spotLight
-                    position={[10, 10, 10]}
-                    angle={0.15}
-                    penumbra={1}
-                    intensity={10}
-                    color="#ffffff"
-                    castShadow
-                  />
-
-                  {/* Warm accent light */}
-                  <pointLight
-                    position={[5, 5, -5]}
-                    intensity={1}
-                    color="#ffcc99"
-                  />
-
-                  <fog attach="fog" args={["#000000", 15, 25]} />
-
-                  {/* Scene components */}
-                  <Suspense fallback={null}>
-                    <BuddhaModel />
-                  </Suspense>
-                  <OrbitControls
-                    enableZoom={false}
-                    maxPolarAngle={Math.PI / 2}
-                    minPolarAngle={Math.PI / 3}
-                  />
-                </Canvas>
-              </div>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => router.push("/questions")}
+                className="w-full bg-gradient-to-r from-white/20 via-white/30 to-white/20 text-white border-none px-8 py-3 rounded-full text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                Begin Your Journey
+              </motion.button>
             </div>
-
-            {/* Intro Section */}
-            <motion.div
-              initial={{ opacity: 0, x: 100 }}
-              animate={{ opacity: showIntro ? 1 : 0, x: showIntro ? 0 : 100 }}
-              transition={{ duration: 0.8 }}
-              className="w-1/2"
-            >
-              <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-xl">
-                <h1 className="text-4xl md:text-5xl font-serif mb-6 text-white">
-                  Mind & Soul
-                </h1>
-                <p className="text-lg text-gray-300 mb-8 leading-relaxed">
-                  Welcome to a space of tranquility and self-discovery. Our
-                  AI-powered platform offers personalized guidance for your
-                  mental well-being journey.
-                </p>
-
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => router.push("/questions")}
-                  className="w-full bg-gradient-to-r from-white/20 via-white/30 to-white/20 text-white border-none px-8 py-3 rounded-full text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-300"
-                >
-                  Begin Your Journey
-                </motion.button>
-              </div>
-            </motion.div>
-          </div>
-        </div>
-
-        {/* Feature Components */}
-        <div className="w-full max-w-6xl mx-auto space-y-32 py-32">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.3 }}
-            variants={{
-              hidden: { opacity: 0, x: -100 },
-              visible: { opacity: 1, x: 0 },
-            }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="w-full"
-          >
-            <MultimodalAnalysis />
-          </motion.div>
-
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.3 }}
-            variants={{
-              hidden: { opacity: 0, x: 100 },
-              visible: { opacity: 1, x: 0 },
-            }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="w-full"
-          >
-            <PersonalityAvatar />
-          </motion.div>
-
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.3 }}
-            variants={{
-              hidden: { opacity: 0, x: -100 },
-              visible: { opacity: 1, x: 0 },
-            }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="w-full"
-          >
-            <PersonalizedSuggestions />
-          </motion.div>
-
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.3 }}
-            variants={{
-              hidden: { opacity: 0, x: 100 },
-              visible: { opacity: 1, x: 0 },
-            }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="w-full"
-          >
-            <TherapyChatbot />
-          </motion.div>
-
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.3 }}
-            variants={{
-              hidden: { opacity: 0, x: -100 },
-              visible: { opacity: 1, x: 0 },
-            }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="w-full"
-          >
-            <Dashboard />
           </motion.div>
         </div>
+      </div>
+
+      {/* Feature Components */}
+      <div className="w-full max-w-6xl mx-auto space-y-32 py-32">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={{
+            hidden: { opacity: 0, x: -100 },
+            visible: { opacity: 1, x: 0 },
+          }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="w-full"
+        >
+          <MultimodalAnalysis />
+        </motion.div>
+
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={{
+            hidden: { opacity: 0, x: 100 },
+            visible: { opacity: 1, x: 0 },
+          }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="w-full"
+        >
+          <PersonalityAvatar />
+        </motion.div>
+
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={{
+            hidden: { opacity: 0, x: -100 },
+            visible: { opacity: 1, x: 0 },
+          }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="w-full"
+        >
+          <PersonalizedSuggestions />
+        </motion.div>
+
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={{
+            hidden: { opacity: 0, x: 100 },
+            visible: { opacity: 1, x: 0 },
+          }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="w-full"
+        >
+          <TherapyChatbot />
+        </motion.div>
+
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={{
+            hidden: { opacity: 0, x: -100 },
+            visible: { opacity: 1, x: 0 },
+          }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="w-full"
+        >
+          <Dashboard />
+        </motion.div>
       </div>
 
       {/* Footer */}
