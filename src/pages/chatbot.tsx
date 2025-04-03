@@ -9,11 +9,12 @@ import {
 import Link from 'next/link';
 import '../app/globals.css';
 import router from 'next/router';
+import { getUserData, updateUserData } from '@/utils/userStorage';
 
 // Custom Card Components
 const Card = ({ children, className = '', ...props }: { children: React.ReactNode; className?: string; [key: string]: any; }) => (
   <div 
-    className={`rounded-lg border bg-gray-900/80 backdrop-blur-xl border-gray-800 shadow-sm ${className}`} 
+    className={`rounded-lg border bg-gray-900/80 backdrop-blur-xl border-gray-800 shadow-lg transition-shadow duration-300 ${className}`} 
     {...props}
   >
     {children}
@@ -127,6 +128,9 @@ interface Message {
   timestamp: number;
 }
 
+// Updated Button Styles
+const buttonStyles = "p-3 rounded-lg border border-gray-700 text-gray-100 transition-colors duration-300 hover:bg-gray-700";
+
 export default function ChatbotPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -135,13 +139,22 @@ export default function ChatbotPage() {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
   const [isListening, setIsListening] = useState(false);
+  const [userData, setUserData] = useState<UserData | null>(null);
 
   useEffect(() => {
-    const savedHistory = localStorage.getItem('chatHistoryArchive');
-    if (savedHistory) {
-      setChatHistory(JSON.parse(savedHistory));
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    if (currentUser.username) {
+      const data = getUserData(currentUser.username);
+      if (data) {
+        setUserData(data);
+        setChatHistory(data.chatHistory || []);
+      } else {
+        router.push('/login');
+      }
+    } else {
+      router.push('/login');
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -247,7 +260,7 @@ export default function ChatbotPage() {
         }
       }
 
-      // Update or create chat history
+      // Update user's chat history
       const updatedHistory = messages.length === 0 
         ? [...chatHistory, messagesWithBot]
         : chatHistory.map(chat => 
@@ -255,7 +268,15 @@ export default function ChatbotPage() {
           );
 
       setChatHistory(updatedHistory);
-      localStorage.setItem('chatHistoryArchive', JSON.stringify(updatedHistory));
+      
+      // Update user data
+      const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      if (currentUser.username) {
+        updateUserData(currentUser.username, {
+          chatHistory: updatedHistory
+        });
+      }
+
     } catch (error) {
       console.error('Error processing message:', error);
       const errorMessage: Message = {
@@ -278,7 +299,13 @@ export default function ChatbotPage() {
   const deleteChat = (index: number) => {
     const updatedHistory = chatHistory.filter((_, i) => i !== index);
     setChatHistory(updatedHistory);
-    localStorage.setItem('chatHistoryArchive', JSON.stringify(updatedHistory));
+    
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    if (currentUser.username) {
+      updateUserData(currentUser.username, {
+        chatHistory: updatedHistory
+      });
+    }
     
     if (messages.length > 0 && messages[0].id === chatHistory[index][0].id) {
       setMessages([]);
@@ -295,7 +322,13 @@ export default function ChatbotPage() {
     
     const updatedHistory = [...chatHistory, newChat];
     setChatHistory(updatedHistory);
-    localStorage.setItem('chatHistoryArchive', JSON.stringify(updatedHistory));
+    
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    if (currentUser.username) {
+      updateUserData(currentUser.username, {
+        chatHistory: updatedHistory
+      });
+    }
     
     setMessages([]);
   };
@@ -473,7 +506,7 @@ export default function ChatbotPage() {
                     className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-[65%] p-4 rounded-lg ${
+                      className={`max-w-[65%] p-4 rounded-lg transition-all duration-300 ${
                         message.type === 'user'
                           ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white border-none'
                           : 'bg-gray-800/50 text-gray-100 border border-gray-700'
@@ -530,13 +563,13 @@ export default function ChatbotPage() {
                     onChange={(e) => setInput(e.target.value)}
                     onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && handleSubmit(e)}
                     placeholder="Type your message..."
-                    className="flex-1 p-3 rounded-lg bg-gray-800/50 border border-gray-700 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    className="flex-1 p-3 rounded-lg bg-gray-800/50 border border-gray-700 text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-300"
                     disabled={isLoading}
                   />
                   <button
                     type="button"
                     onClick={isListening ? stopListening : startListening}
-                    className={`p-3 rounded-lg border border-gray-700 text-gray-100 transition-colors ${isListening ? 'bg-red-600' : 'bg-gray-800 hover:bg-gray-700'}`}
+                    className={`${buttonStyles} ${isListening ? 'bg-red-600' : 'bg-gray-800'}`}
                     title={isListening ? "Stop voice input" : "Start voice input"}
                     aria-label={isListening ? "Stop voice input" : "Start voice input"}
                     disabled={isLoading}
@@ -545,7 +578,7 @@ export default function ChatbotPage() {
                   </button>
                   <button
                     type="submit"
-                    className="btn bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-500 hover:from-indigo-600 hover:via-purple-600 hover:to-violet-600 text-white border-0 shadow-lg px-6 transform hover:scale-105 transition-transform"
+                    className={`btn bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-500 hover:from-indigo-600 hover:via-purple-600 hover:to-violet-600 text-white border-0 shadow-lg px-6 transform hover:scale-105 transition-transform duration-300`}
                     title="Send message"
                     aria-label="Send message"
                     disabled={isLoading}

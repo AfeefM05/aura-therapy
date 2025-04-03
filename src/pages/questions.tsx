@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Camera, Check, ChevronRight, Star, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import "../app/globals.css";
+import { updateUserData } from '@/utils/userStorage';
 
 interface Question {
   question: string;
@@ -386,47 +387,31 @@ export default function QuestionsPage() {
       console.error("No video recorded");
       return;
     }
-
+  
     setIsLoading(true);
-
+  
     const formData = new FormData();
     formData.append("answers", JSON.stringify(Object.values(answers)));
     formData.append("description", description);
-    formData.append(
-      "video",
-      new File([videoBlob], "video.webm", {
-        type: "video/webm",
-      })
-    );
-
+    formData.append("video", new File([videoBlob], "video.webm", { type: "video/webm" }));
+  
     if (audioBlob) {
-      formData.append(
-        "audio",
-        new File([audioBlob], "audio.wav", {
-          type: "audio/wav",
-        })
-      );
+      formData.append("audio", new File([audioBlob], "audio.wav", { type: "audio/wav" }));
     }
-
+  
     try {
       const response = await fetch("/api/submit", {
         method: "POST",
         body: formData,
       });
-
+  
       if (!response.ok) throw new Error("Network response was not ok");
-
+  
       const result = await response.json();
       console.log("Submission successful:", result);
-
-      const {
-        textAnalysis,
-        audioAnalysis,
-        videoAnalysis,
-        answers,
-        description,
-      } = result;
-
+  
+      const { textAnalysis, audioAnalysis, videoAnalysis, answers, description } = result;
+  
       const taglineResponse = await fetch("/api/generate-taglines", {
         method: "POST",
         headers: {
@@ -440,26 +425,30 @@ export default function QuestionsPage() {
           description,
         }),
       });
-
+  
       if (!taglineResponse.ok) throw new Error("Tagline generation failed");
-
+  
       const taglineResult = await taglineResponse.json();
       console.log("Taglines generated:", taglineResult.taglines);
-
-      localStorage.setItem(
-        "recommendationTaglines",
-        JSON.stringify(taglineResult.taglines)
-      );
-      localStorage.removeItem("videosData");
-      localStorage.removeItem("musicData");
-      localStorage.removeItem("completedSuggestions");
-
-      router.push("/suggestions");
+  
+      // Get current user
+      const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      if (currentUser.username) {
+        // Update user data with taglines
+        updateUserData(currentUser.username, {
+          taglines: taglineResult.taglines,
+          completedItems: {},
+        });
+      }
+  
+      router.push('/suggestions');
     } catch (error) {
       console.error("Error submitting form:", error);
       setIsLoading(false);
     }
   };
+
+
   const nextQuestion = () => {
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion((c) => c + 1);
