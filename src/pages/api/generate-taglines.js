@@ -45,6 +45,7 @@ export default async function handler(req, res) {
                 - Generate A Unique Tagline for the user based on the user's personality traits and It want To improves user's mood and emotional state.
                 - This Tagline will be used for the Video Recommendation System by Searching the Video from the Youtube so Give according to the Mood.
                 - It should be 10-15 words long.
+                -Give inspirational and motivational videos taglines only in english or Tamil.
                 - I want videos that have more content and more views so user can get more information and come to good mood so like this searching GiveTagline Accordingly
 
             3).Books Tagline (Exactly 4):
@@ -82,9 +83,9 @@ export default async function handler(req, res) {
 
         ## Mindful Activities, Meditation Practices,Self Care Activities,Daily Affirmation,Books,Music,Video Should Not be same Everytime thing and Give unique responses
         ## Think new and unique for every field especially for Mindful Activities, Meditation Practices,Self Care Activities,Daily Affirmation,Books Give new and unique names and details
-        ##Because User will be see this activites same every time so give new and unique names and details
+        ## Because User will be see this activites same every time so give new and unique names and details
 
-        #### Give response as Soon as Possible to the User
+        ##### Give response as Soon (Very Fast ) to the User
     `
 
 

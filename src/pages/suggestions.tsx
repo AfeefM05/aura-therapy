@@ -109,7 +109,7 @@ export default function SuggestionsPage() {
   };
 
   useEffect(() => {
-    const fetchYouTubeData = async (query: string, category: 'music' | 'videos', setState: React.Dispatch<React.SetStateAction<Suggestion[]>>, duration: 'short' | 'medium') => {
+    const fetchYouTubeData = async (query: string, category: 'music' | 'videos', setState: React.Dispatch<React.SetStateAction<Suggestion[]>>, duration: 'medium' | 'medium') => {
       try {
         const cachedData = localStorage.getItem(`${category}Data`);
         
