@@ -294,7 +294,7 @@ export default function Home() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => router.push("/questions")}
+                onClick={() => router.push("/login")}
                 className="w-full bg-gradient-to-r from-white/20 via-white/30 to-white/20 text-white border-none px-8 py-3 rounded-full text-lg font-medium shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 Begin Your Journey

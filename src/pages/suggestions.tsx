@@ -1,12 +1,12 @@
-"use client";
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Activity, Music, Youtube, Book, CheckCircle2, Heart, Moon, Sun, Coffee, Feather, Smile, ChevronLeft, ChevronRight } from 'lucide-react';
 import axios from 'axios';
 import { Navbar } from '@/components/ui/navbar';
 import '../app/globals.css';
-
+import { getUserData } from '@/utils/userStorage';
+import { useRouter } from 'next/router';
+import { updateUserData } from '@/utils/userStorage';
 interface Suggestion {
   id: string;
   title: string;
@@ -36,7 +36,7 @@ const categoryColors = {
 };
 
 // YouTube API Key
-const API_KEY = "AIzaSyDNXgYD8CQQdefXIPjM8ikJFk9xHZC5kYQ";
+const API_KEY = "AIzaSyAy5lzA9CqZUmb90Yxd5fj2uEWITgbcMC0";
 const SEARCH_URL = "https://www.googleapis.com/youtube/v3/search";
 
 // Default fallback data
@@ -75,27 +75,38 @@ export default function SuggestionsPage() {
     videos: true
   });
   const [completedItems, setCompletedItems] = useState<Record<string, boolean>>({});
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    const storedTaglines = localStorage.getItem('recommendationTaglines');
-    const storedCompleted = localStorage.getItem('completedSuggestion');
-    
-    console.log('Stored Taglines:', storedTaglines); // Debugging line
-    if (storedTaglines) {
-        const parsedTaglines = JSON.parse(storedTaglines);
-        console.log('Parsed Taglines:', parsedTaglines); // Debugging line
-        // Directly set the taglines state with the parsed JSON
-        setTaglines(parsedTaglines);
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    if (currentUser.username) {
+      const data = getUserData(currentUser.username);
+      if (data) {
+        setUserData(data);
+        setTaglines(data.taglines || initialTaglines);
+        setCompletedItems(data.completedItems || {});
+      } else {
+        router.push('/login');
+      }
     } else {
-        // Fallback logic if no stored taglines are found
-        setTaglines(initialTaglines); // Set to initial structure if not found
-        localStorage.setItem('recommendationTaglines', JSON.stringify(initialTaglines));
+      router.push('/login');
     }
+  }, [router]);
 
-    if (storedCompleted) {
-        setCompletedItems(JSON.parse(storedCompleted));
+  const handleComplete = (id: string) => {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    if (currentUser.username) {
+      const newCompletedItems = {
+        ...completedItems,
+        [id]: !completedItems[id],
+      };
+      setCompletedItems(newCompletedItems);
+      updateUserData(currentUser.username, {
+        completedItems: newCompletedItems,
+      });
     }
-  }, []);
+  };
 
   useEffect(() => {
     const fetchYouTubeData = async (query: string, category: 'music' | 'videos', setState: React.Dispatch<React.SetStateAction<Suggestion[]>>, duration: 'short' | 'medium') => {
@@ -189,14 +200,7 @@ export default function SuggestionsPage() {
     }
   }, [taglines]); // Depend on the entire taglines object
 
-  const handleComplete = (id: string) => {
-    const newCompletedItems = {
-      ...completedItems,
-      [id]: !completedItems[id] // This toggles the current state
-    };
-    setCompletedItems(newCompletedItems);
-    localStorage.setItem('completedSuggestions', JSON.stringify(newCompletedItems));
-  };
+  
   
 
   const SuggestionCard = ({ item }: { item: Suggestion }) => {
@@ -210,9 +214,7 @@ export default function SuggestionsPage() {
         whileTap={{ scale: 0.98 }}
         className={`relative h-full rounded-xl p-5 shadow-lg transition-all bg-gray-800 border border-gray-700 overflow-hidden flex flex-col ${isCompleted ? 'opacity-70' : ''}`}
       >
-        {/* Rest of the card content remains the same */}
         <div className="flex-grow">
-          {/* Gradient accent bar */}
           <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${colorClass}`}></div>
           
           <div className="flex items-start justify-between">
