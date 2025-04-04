@@ -36,7 +36,7 @@ export default async function handler(req, res) {
                 - Generate a tagline for the user based on the Mind State analysis and the user's personality traits and It want To improves user's mood and emotional state.
                 - Generate A Unique Tagline for the user based on the user's personality traits and It want To improves user's mood and emotional state.
                 - This Tagline will be used for the Music Recommendation System by Searching the Music from the Youtube so Give according to the Mood.
-                - Give Tagline to Fetch Latest Tamil Songs like "latest sad Tamil Songs" "latest sad Tamil Songs" Dont Give Same Tagline Everytime and Given example  or provide singers sad songs it can give easily.
+                - Give Tagline to Fetch Tamil Songs from Youtube.
                 - It should be 10-15 words long.
                 - Add In End "give Full Songs".
               
@@ -45,7 +45,7 @@ export default async function handler(req, res) {
                 - Generate A Unique Tagline for the user based on the user's personality traits and It want To improves user's mood and emotional state.
                 - This Tagline will be used for the Video Recommendation System by Searching the Video from the Youtube so Give according to the Mood.
                 - It should be 10-15 words long.
-                -Give inspirational and motivational videos taglines only in english or Tamil.
+                - Give inspirational or motivational videos taglines only in english or Tamil to improve user's mood and emotional state.
                 - I want videos that have more content and more views so user can get more information and come to good mood so like this searching GiveTagline Accordingly
 
             3).Books Tagline (Exactly 4):

@@ -36,7 +36,7 @@ const categoryColors = {
 };
 
 // YouTube API Key
-const API_KEY = "AIzaSyAy5lzA9CqZUmb90Yxd5fj2uEWITgbcMC0";
+const API_KEY = "AIzaSyANytiZUbeAbM-Ya6pKWdlodejRfqEz9_I";
 const SEARCH_URL = "https://www.googleapis.com/youtube/v3/search";
 
 // Default fallback data
@@ -111,11 +111,11 @@ export default function SuggestionsPage() {
   useEffect(() => {
     const fetchYouTubeData = async (query: string, category: 'music' | 'videos', setState: React.Dispatch<React.SetStateAction<Suggestion[]>>, duration: 'medium' | 'medium') => {
       try {
-        const cachedData = localStorage.getItem(`${category}Data`);
+        // const cachedData = localStorage.getItem(`${category}Data`);
         
-        if (cachedData) {
-          setState(JSON.parse(cachedData));
-        }
+        // if (cachedData) {
+        //   setState(JSON.parse(cachedData));
+        // }
 
         // Fetch the data from the YouTube API
         const response = await axios.get(SEARCH_URL, {
@@ -182,10 +182,10 @@ export default function SuggestionsPage() {
     // Only fetch data if taglines have valid values
     if (taglines.music || taglines.video) {
       if (taglines.music) {
-        fetchYouTubeData(taglines.music, "music", setMusic, 'short');
+        fetchYouTubeData(taglines.music, "music", setMusic, 'medium');
         console.log(taglines.music);
       } else {
-        fetchYouTubeData(defaultMusicTagline, "music", setMusic, 'short');
+        fetchYouTubeData(defaultMusicTagline, "music", setMusic, 'medium');
         console.log(defaultMusicTagline);
       }
 
