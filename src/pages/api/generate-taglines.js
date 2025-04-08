@@ -90,7 +90,7 @@ export default async function handler(req, res) {
 
 
     const {object}= await generateObject({
-      model: google('gemini-2.5-pro-exp-03-25'),
+      model: google('gemini-1.5-flash'),
       prompt: prompts,
       apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
       schema: z.object({
