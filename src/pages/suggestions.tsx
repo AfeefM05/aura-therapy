@@ -4,9 +4,9 @@ import { Activity, Music, Youtube, Book, CheckCircle2, Heart, Moon, Sun, Coffee,
 import axios from 'axios';
 import { Navbar } from '@/components/ui/navbar';
 import '../app/globals.css';
-import { getUserData } from '@/utils/userStorage';
-import { useRouter } from 'next/router';
-import { updateUserData } from '@/utils/userStorage';
+import { getUserData, updateUserData } from '@/utils/mongoUserStorage';
+import { useRouter } from 'next/navigation';
+
 interface Suggestion {
   id: string;
   title: string;
@@ -79,22 +79,33 @@ export default function SuggestionsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    if (currentUser.username) {
-      const data = getUserData(currentUser.username);
-      if (data) {
-        setUserData(data);
-        setTaglines(data.taglines || initialTaglines);
-        setCompletedItems(data.completedItems || {});
+    const loadUserData = async () => {
+      const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      console.log('Current user from localStorage:', currentUser);
+      if (currentUser.username) {
+        const data = await getUserData(currentUser.username);
+        console.log('Loaded user data:', data);
+        if (data) {
+          setUserData(data);
+          const taglinesToSet = data.taglines || initialTaglines;
+          console.log('Setting taglines:', taglinesToSet);
+          setTaglines(taglinesToSet);
+          setCompletedItems(data.completedItems || {});
+          console.log('Set taglines:', taglinesToSet);
+        } else {
+          console.log('No user data found, redirecting to login');
+          router.push('/login');
+        }
       } else {
+        console.log('No current user, redirecting to login');
         router.push('/login');
       }
-    } else {
-      router.push('/login');
-    }
+    };
+    
+    loadUserData();
   }, [router]);
 
-  const handleComplete = (id: string) => {
+  const handleComplete = async (id: string) => {
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
     if (currentUser.username) {
       const newCompletedItems = {
@@ -102,9 +113,13 @@ export default function SuggestionsPage() {
         [id]: !completedItems[id],
       };
       setCompletedItems(newCompletedItems);
-      updateUserData(currentUser.username, {
-        completedItems: newCompletedItems,
-      });
+      try {
+        await updateUserData(currentUser.username, {
+          completedItems: newCompletedItems,
+        });
+      } catch (error) {
+        console.error('Error updating completed items:', error);
+      }
     }
   };
 
@@ -199,8 +214,10 @@ export default function SuggestionsPage() {
     }
   }, [taglines]); // Depend on the entire taglines object
 
-  
-  
+  // Debug: Log taglines changes
+  useEffect(() => {
+    console.log('Current taglines state:', taglines);
+  }, [taglines]);
 
   const SuggestionCard = ({ item }: { item: Suggestion }) => {
     const Icon = categoryIcons[item.category];
@@ -353,13 +370,13 @@ export default function SuggestionsPage() {
             <h2 className="text-2xl font-semibold text-white">Mindful Activities</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {taglines.mindfulactivities.mindfulactivitiesnames.map((name, index) => (
+            {(taglines.mindfulactivities?.mindfulactivitiesnames || []).map((name, index) => (
               <SuggestionCard 
                 key={`activity-${index}`} 
                 item={{
                   id: `activity-${index}`,
                   title: name,
-                  description: taglines.mindfulactivities.mindfulactivitiesdetails[index],
+                  description: taglines.mindfulactivities?.mindfulactivitiesdetails?.[index] || '',
                   category: 'activities',
                   completed: completedItems[`activity-${index}`] || false
                 }} 
@@ -375,13 +392,13 @@ export default function SuggestionsPage() {
             <h2 className="text-2xl font-semibold text-white">Meditation Practices</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {taglines.meditationpractices.meditationnames.map((name, index) => (
+            {(taglines.meditationpractices?.meditationnames || []).map((name, index) => (
               <SuggestionCard 
                 key={`meditation-${index}`} 
                 item={{
                   id: `meditation-${index}`,
                   title: name,
-                  description: taglines.meditationpractices.meditationdetails[index],
+                  description: taglines.meditationpractices?.meditationdetails?.[index] || '',
                   category: 'meditation',
                   completed: completedItems[`meditation-${index}`] || false
                 }} 
@@ -413,13 +430,13 @@ export default function SuggestionsPage() {
             <h2 className="text-2xl font-semibold text-white">Healing Reads</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {taglines.books.booksnames.map((name, index) => (
+            {(taglines.books?.booksnames || []).map((name, index) => (
               <SuggestionCard 
                 key={`book-${index}`} 
                 item={{
                   id: `book-${index}`,
                   title: name,
-                  description: taglines.books.bookdetails[index],
+                  description: taglines.books?.bookdetails?.[index] || '',
                   category: 'books',
                   completed: completedItems[`book-${index}`] || false
                 }} 
@@ -435,13 +452,13 @@ export default function SuggestionsPage() {
             <h2 className="text-2xl font-semibold text-white">Self-Care Rituals</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {taglines.selfcare.selfcarenames.map((name, index) => (
+            {(taglines.selfcare?.selfcarenames || []).map((name, index) => (
               <SuggestionCard 
                 key={`selfcare-${index}`} 
                 item={{
                   id: `selfcare-${index}`,
                   title: name,
-                  description: taglines.selfcare.selfcaredetails[index],
+                  description: taglines.selfcare?.selfcaredetails?.[index] || '',
                   category: 'self-care',
                   completed: completedItems[`selfcare-${index}`] || false
                 }} 
@@ -454,7 +471,7 @@ export default function SuggestionsPage() {
         <div className="bg-gradient-to-r from-blue-900 to-purple-900 rounded-2xl p-8 text-center border border-gray-700">
           <h3 className="text-2xl font-semibold mb-4">Today&apos;s Affirmation</h3>
           <p className="text-xl italic text-gray-200">
-            &quot;{taglines.dailyAffirmation}&quot;
+            &quot;{taglines.dailyAffirmation || 'I am worthy of love, peace, and happiness. Today I choose to be kind to myself and others.'}&quot;
           </p>
           <button className="mt-6 px-6 py-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition">
             Save Affirmation

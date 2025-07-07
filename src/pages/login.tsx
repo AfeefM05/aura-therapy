@@ -4,46 +4,40 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/ui/navbar';
 import '../app/globals.css';
-import { getUserData, setUserData } from '@/utils/userStorage';
-
+import { getUserData, createUser, userExists } from '@/utils/mongoUserStorage';
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  
-
-
-
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const userData = getUserData(username);
+    setIsLoading(true);
     
-    if (!userData) {
-      // Initialize new user data with default values
-      const newUserData: UserData = {
-        username,
-        chatHistory: [],
-        suggestions: [],
-        dashboardData: {},
-        taglines: {
-          music: '',
-          video: '',
-          books: { booksnames: [], bookdetails: [] },
-          selfcare: { selfcarenames: [], selfcaredetails: [] },
-          meditationpractices: { meditationnames: [], meditationdetails: [] },
-          mindfulactivities: { mindfulactivitiesnames: [], mindfulactivitiesdetails: [] },
-          dailyAffirmation: '',
-        },
-        completedItems: {},
-      };
-      setUserData(username, newUserData);
-      localStorage.setItem('currentUser', JSON.stringify({ username }));
-      router.push('/questions');
-    } else {
-      localStorage.setItem('currentUser', JSON.stringify({ username }));
-      router.push('/suggestions');
+    try {
+      const exists = await userExists(username);
+      
+      if (!exists) {
+        // Create new user
+        const success = await createUser(username);
+        if (success) {
+          localStorage.setItem('currentUser', JSON.stringify({ username }));
+          router.push('/questions');
+        } else {
+          alert('Failed to create user. Please try again.');
+        }
+      } else {
+        // User exists, proceed to suggestions
+        localStorage.setItem('currentUser', JSON.stringify({ username }));
+        router.push('/suggestions');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('An error occurred during login. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -74,6 +68,7 @@ const LoginPage = () => {
                   className="w-full text-white pl-12 pr-4 py-3 bg-gray-700/50 border border-gray-600/30 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all"
                   placeholder="Username"
                   required
+                  disabled={isLoading}
                 />
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,6 +85,7 @@ const LoginPage = () => {
                   className="w-full text-white pl-12 pr-4 py-3 bg-gray-700/50 border border-gray-600/30 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all"
                   placeholder="Password"
                   required
+                  disabled={isLoading}
                 />
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-500">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -101,9 +97,10 @@ const LoginPage = () => {
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white py-3.5 rounded-xl font-semibold transition-all transform hover:scale-[1.01] shadow-lg hover:shadow-indigo-500/20"
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white py-3.5 rounded-xl font-semibold transition-all transform hover:scale-[1.01] shadow-lg hover:shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Authenticate
+              {isLoading ? 'Authenticating...' : 'Authenticate'}
             </button>
           </form>
 

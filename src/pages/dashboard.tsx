@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Activity, Music, Youtube, Book, CheckCircle2, Heart, Moon, Brain, BatteryCharging, Calendar, TrendingUp, Smile } from 'lucide-react';
+import { Activity, Music, Youtube, Book, CheckCircle2, Heart, Moon, Brain, BatteryCharging, Calendar, TrendingUp, Smile, Plus, Edit, Trash2, X } from 'lucide-react';
 import '../app/globals.css';
 import { Navbar } from '@/components/ui/navbar';
-import { getUserData, updateUserData } from '@/utils/userStorage';
-import { useRouter } from 'next/router';
+import { getUserData, updateUserData } from '@/utils/mongoUserStorage';
+import { useRouter } from 'next/navigation';
 import { UserData } from '@/utils/userStorage';
+import { motion } from 'framer-motion';
+
 interface WellbeingData {
   date: string;
   moodScore: number;
@@ -100,6 +102,14 @@ interface UserData {
     dailyAffirmation: string;
   };
   completedItems: Record<string, boolean>;
+  dashboardData?: {
+    journalEntries?: { id: string; content: string; date: string }[];
+    moodData?: { rating: number; date: string }[];
+    weeklyGoals?: { id: string; title: string; target: number; current: number; unit: string }[];
+    suggestions?: Suggestion[];
+    completedItems?: Record<string, boolean>;
+  };
+  // Legacy fields for backward compatibility
   journalEntries?: { id: string; content: string; date: string }[];
   moodData?: { rating: number; date: string }[];
   weeklyGoals?: { id: string; title: string; target: number; current: number; unit: string }[];
@@ -170,22 +180,43 @@ const UserMentalWellbeingDashboard: React.FC = () => {
   const [newGoalTarget, setNewGoalTarget] = useState(0);
   const [showGoalInput, setShowGoalInput] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [weeklyGoals, setWeeklyGoals] = useState<{ id: string; title: string; target: number; current: number; unit: string }[]>([]);
   const router = useRouter();
   
   useEffect(() => {
-    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    if (currentUser.username) {
-      const data = getUserData(currentUser.username);
-      if (data) {
-        setUserData(data);
-        setCompletedItems(data.completedItems || {});
-        setJournalEntries(data.journalEntries || []);
+    const loadUserData = async () => {
+      const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      if (currentUser.username) {
+        try {
+          const data = await getUserData(currentUser.username);
+          if (data) {
+            setUserData(data);
+            setCompletedItems(data.completedItems || {});
+            // Load data from dashboardData field
+            setJournalEntries(data.dashboardData?.journalEntries || []);
+            // Set weekly goals from dashboardData
+            setWeeklyGoals(data.dashboardData?.weeklyGoals || []);
+            // Set mood data and weekly goals from dashboardData
+            if (data.dashboardData) {
+              setUserData(prev => prev ? ({
+                ...prev,
+                moodData: data.dashboardData.moodData || [],
+                weeklyGoals: data.dashboardData.weeklyGoals || []
+              }) : null);
+            }
+          } else {
+            router.push('/login');
+          }
+        } catch (error) {
+          console.error('Error loading user data:', error);
+          router.push('/login');
+        }
       } else {
         router.push('/login');
       }
-    } else {
-      router.push('/login');
-    }
+    };
+
+    loadUserData();
   }, [router]);
 
   // Debugging: Check userData
@@ -211,8 +242,8 @@ const UserMentalWellbeingDashboard: React.FC = () => {
   const wellbeingSummary: WellbeingSummary[] = [
     { 
       title: 'Mood Score', 
-      value: userData?.moodData?.length 
-        ? (userData.moodData.reduce((sum, entry) => sum + entry.rating, 0) / userData.moodData.length).toFixed(1) + '/10'
+      value: userData?.dashboardData?.moodData?.length 
+        ? (userData.dashboardData.moodData.reduce((sum, entry) => sum + entry.rating, 0) / userData.dashboardData.moodData.length).toFixed(1) + '/10'
         : '7.8/10', 
       change: 12, 
       icon: <Smile size={20} />, 
@@ -227,15 +258,15 @@ const UserMentalWellbeingDashboard: React.FC = () => {
     },
     { 
       title: 'Journal Entries', 
-      value: userData?.journalEntries?.length?.toString() || '0', 
+      value: userData?.dashboardData?.journalEntries?.length?.toString() || '0', 
       change: 8, 
       icon: <Book size={20} />, 
       color: '#6366f1' 
     },
     { 
       title: 'Goals Progress', 
-      value: userData?.weeklyGoals?.length 
-        ? `${userData.weeklyGoals.filter(g => g.current >= g.target).length}/${userData.weeklyGoals.length}`
+      value: userData?.dashboardData?.weeklyGoals?.length 
+        ? `${userData.dashboardData.weeklyGoals.filter(g => g.current >= g.target).length}/${userData.dashboardData.weeklyGoals.length}`
         : '0/0', 
       change: 15, 
       icon: <TrendingUp size={20} />, 
@@ -243,7 +274,7 @@ const UserMentalWellbeingDashboard: React.FC = () => {
     },
   ];
 
-  const handleLogMood = (rating: number) => {
+  const handleLogMood = async (rating: number) => {
     const newMoodData = [...(userData?.moodData || []), {
       rating,
       date: new Date().toISOString()
@@ -251,17 +282,27 @@ const UserMentalWellbeingDashboard: React.FC = () => {
     
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
     if (currentUser.username) {
-      updateUserData(currentUser.username, {
-        moodData: newMoodData
-      });
-      setUserData(prev => prev ? ({ ...prev, moodData: newMoodData }) : null);
+      try {
+        await updateUserData(currentUser.username, {
+          dashboardData: {
+            ...userData?.dashboardData,
+            moodData: newMoodData
+          }
+        });
+        setUserData(prev => prev ? ({ 
+          ...prev, 
+          dashboardData: { ...prev.dashboardData, moodData: newMoodData }
+        }) : null);
+      } catch (error) {
+        console.error('Error updating mood data:', error);
+      }
     }
     
     setMoodLogSuccess(true);
     setTimeout(() => setMoodLogSuccess(false), 2000);
   };
 
-  const handleAddEntry = () => {
+  const handleAddEntry = async () => {
     if (newEntry.trim()) {
       const entry = {
         id: Date.now().toString(),
@@ -275,10 +316,20 @@ const UserMentalWellbeingDashboard: React.FC = () => {
       
       const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
       if (currentUser.username) {
-        updateUserData(currentUser.username, {
-          journalEntries: updatedEntries
-        });
-        setUserData(prev => prev ? ({ ...prev, journalEntries: updatedEntries }) : null);
+        try {
+          await updateUserData(currentUser.username, {
+            dashboardData: {
+              ...userData?.dashboardData,
+              journalEntries: updatedEntries
+            }
+          });
+          setUserData(prev => prev ? ({ 
+            ...prev, 
+            dashboardData: { ...prev.dashboardData, journalEntries: updatedEntries }
+          }) : null);
+        } catch (error) {
+          console.error('Error updating journal entries:', error);
+        }
       }
     }
   };
@@ -292,7 +343,7 @@ const UserMentalWellbeingDashboard: React.FC = () => {
     }
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (editEntryId && newEntry.trim()) {
       const updatedEntries = journalEntries.map(entry => 
         entry.id === editEntryId ? { ...entry, content: newEntry } : entry
@@ -304,10 +355,20 @@ const UserMentalWellbeingDashboard: React.FC = () => {
       
       const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
       if (currentUser.username) {
-        updateUserData(currentUser.username, {
-          journalEntries: updatedEntries
-        });
-        setUserData(prev => prev ? ({ ...prev, journalEntries: updatedEntries }) : null);
+        try {
+          await updateUserData(currentUser.username, {
+            dashboardData: {
+              ...userData?.dashboardData,
+              journalEntries: updatedEntries
+            }
+          });
+          setUserData(prev => prev ? ({ 
+            ...prev, 
+            dashboardData: { ...prev.dashboardData, journalEntries: updatedEntries }
+          }) : null);
+        } catch (error) {
+          console.error('Error updating journal entries:', error);
+        }
       }
     }
   };
@@ -320,20 +381,30 @@ const UserMentalWellbeingDashboard: React.FC = () => {
     setShowModal(false);
   };
 
-  const handleDeleteEntry = (id: string) => {
+  const handleDeleteEntry = async (id: string) => {
     const updatedEntries = journalEntries.filter(entry => entry.id !== id);
     setJournalEntries(updatedEntries);
     
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
     if (currentUser.username) {
-      updateUserData(currentUser.username, {
-        journalEntries: updatedEntries
-      });
-      setUserData(prev => prev ? ({ ...prev, journalEntries: updatedEntries }) : null);
+      try {
+        await updateUserData(currentUser.username, {
+          dashboardData: {
+            ...userData?.dashboardData,
+            journalEntries: updatedEntries
+          }
+        });
+        setUserData(prev => prev ? ({ 
+          ...prev, 
+          dashboardData: { ...prev.dashboardData, journalEntries: updatedEntries }
+        }) : null);
+      } catch (error) {
+        console.error('Error updating journal entries:', error);
+      }
     }
   };
 
-  const handleAddGoal = () => {
+  const handleAddGoal = async () => {
     if (newGoalTitle.trim() && newGoalTarget > 0) {
       const newGoal = {
         id: `g${Date.now()}`,
@@ -343,14 +414,25 @@ const UserMentalWellbeingDashboard: React.FC = () => {
         unit: 'days'
       };
       
-      const updatedGoals = [...(userData?.weeklyGoals || []), newGoal];
+      const updatedGoals = [...weeklyGoals, newGoal];
+      setWeeklyGoals(updatedGoals);
       
       const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
       if (currentUser.username) {
-        updateUserData(currentUser.username, {
-          weeklyGoals: updatedGoals
-        });
-        setUserData(prev => prev ? ({ ...prev, weeklyGoals: updatedGoals }) : null);
+        try {
+          await updateUserData(currentUser.username, {
+            dashboardData: {
+              ...userData?.dashboardData,
+              weeklyGoals: updatedGoals
+            }
+          });
+          setUserData(prev => prev ? ({ 
+            ...prev, 
+            dashboardData: { ...prev.dashboardData, weeklyGoals: updatedGoals }
+          }) : null);
+        } catch (error) {
+          console.error('Error updating weekly goals:', error);
+        }
       }
       
       setNewGoalTitle('');
@@ -359,7 +441,7 @@ const UserMentalWellbeingDashboard: React.FC = () => {
     }
   };
 
-  const handleCompleteTask = (taskId: string) => {
+  const handleCompleteTask = async (taskId: string) => {
     if (userData) {
       const updatedSuggestions = userData.suggestions.map(task => 
         task.id === taskId ? { ...task, completed: true } : task
@@ -367,15 +449,50 @@ const UserMentalWellbeingDashboard: React.FC = () => {
 
       const updatedCompletedItems = { ...userData.completedItems, [taskId]: true };
       
-      const updatedUserData = { 
-        ...userData, 
-        suggestions: updatedSuggestions,
-        completedItems: updatedCompletedItems
-      };
-      
-      updateUserData(userData.username, updatedUserData);
-      setUserData(updatedUserData);
-      setCompletedItems(updatedCompletedItems);
+      const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      if (currentUser.username) {
+        try {
+          await updateUserData(currentUser.username, {
+            dashboardData: {
+              ...userData?.dashboardData,
+              suggestions: updatedSuggestions,
+              completedItems: updatedCompletedItems
+            }
+          });
+          setUserData(prev => prev ? ({ 
+            ...prev, 
+            dashboardData: { ...prev.dashboardData, suggestions: updatedSuggestions, completedItems: updatedCompletedItems }
+          }) : null);
+        } catch (error) {
+          console.error('Error updating task completion:', error);
+        }
+      }
+    }
+  };
+
+  const handleUpdateGoalProgress = async (goalId: string, increment: number = 1) => {
+    const updatedGoals = weeklyGoals.map(goal => 
+      goal.id === goalId ? { ...goal, current: Math.min(goal.current + increment, goal.target) } : goal
+    );
+    
+    setWeeklyGoals(updatedGoals);
+    
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    if (currentUser.username) {
+      try {
+        await updateUserData(currentUser.username, {
+          dashboardData: {
+            ...userData?.dashboardData,
+            weeklyGoals: updatedGoals
+          }
+        });
+        setUserData(prev => prev ? ({ 
+          ...prev, 
+          dashboardData: { ...prev.dashboardData, weeklyGoals: updatedGoals }
+        }) : null);
+      } catch (error) {
+        console.error('Error updating goal progress:', error);
+      }
     }
   };
 
@@ -569,6 +686,14 @@ const UserMentalWellbeingDashboard: React.FC = () => {
                         }}
                       />
                     </div>
+                    {goal.current < goal.target && (
+                      <button 
+                        onClick={() => handleUpdateGoalProgress(goal.id, 1)}
+                        className="mt-2 text-sm px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-white transition"
+                      >
+                        +1 Progress
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -645,15 +770,15 @@ const UserMentalWellbeingDashboard: React.FC = () => {
             <div className="bg-gradient-to-r from-blue-900 to-purple-900 rounded-xl p-4 border border-gray-700 shadow-md">
               <h3 className="text-lg font-semibold mb-2">Today's Reflection</h3>
               <p className="text-gray-300">
-                {userData?.moodData?.length 
-                  ? `Your average mood score is ${(userData.moodData.reduce((sum, entry) => sum + entry.rating, 0) / userData.moodData.length).toFixed(1)}/10. Keep up the good work!`
+                {userData?.dashboardData?.moodData?.length 
+                  ? `Your average mood score is ${(userData.dashboardData.moodData.reduce((sum, entry) => sum + entry.rating, 0) / userData.dashboardData.moodData.length).toFixed(1)}/10. Keep up the good work!`
                   : "Complete a mood check-in to get personalized insights"}
               </p>
               <div className="mt-4 flex items-center gap-2">
                 <Brain className="text-blue-300" size={18} />
                 <span className="text-blue-300 text-sm">
-                  {userData?.journalEntries?.length 
-                    ? `You have ${userData.journalEntries.length} journal entries`
+                  {userData?.dashboardData?.journalEntries?.length 
+                    ? `You have ${userData.dashboardData.journalEntries.length} journal entries`
                     : "Start journaling to track your thoughts"}
                 </span>
               </div>

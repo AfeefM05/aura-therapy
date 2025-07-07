@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Send, Bot, Trash2, Plus, Sparkles, HeartPulse, Brain, BookOpen, 
@@ -10,7 +10,7 @@ import {
 import Link from 'next/link';
 import '../app/globals.css';
 import router from 'next/router';
-import { getUserData, updateUserData } from '@/utils/userStorage';
+import { getUserData, updateUserData } from '@/utils/mongoUserStorage';
 import QuickStartCardsComponent from '@/components/QuickStartCards';
 
 // Message Interface
@@ -47,22 +47,71 @@ export default function ChatbotPage() {
   const [language, setLanguage] = useState<LanguageOption>('english');
   
   useEffect(() => {
-    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    if (currentUser.username) {
-      const data = getUserData(currentUser.username);
-      if (data) {
-        setUserData(data);
-        setChatHistory(data.chatHistory || []);
-        // Load saved language preference if available
-        if (data.preferredLanguage) {
-          setLanguage(data.preferredLanguage as LanguageOption);
+    const loadUserData = async () => {
+      const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      if (currentUser.username) {
+        try {
+          const data = await getUserData(currentUser.username);
+          if (data) {
+            setUserData(data);
+            // Convert chat history from database format to component format
+            // Database format: [{ message: string; timestamp: number }]
+            // Component format: Message[][]
+            let convertedChatHistory: Message[][] = [];
+            
+            if (data.chatHistory && Array.isArray(data.chatHistory)) {
+              // Group messages by conversation using session separators
+              let currentConversation: any[] = [];
+              let globalIndex = 0;
+              
+              data.chatHistory.forEach((msg: any) => {
+                // Check if this is a session separator
+                if (msg.message && msg.message.startsWith('---SESSION_SEPARATOR_')) {
+                  // Save the current conversation and start a new one
+                  if (currentConversation.length > 0) {
+                    convertedChatHistory.push(currentConversation);
+                  }
+                  currentConversation = [];
+                  return; // Skip the separator message
+                }
+                
+                const messageWithType = {
+                  id: crypto.randomUUID(),
+                  // Use global index to alternate between user and bot messages
+                  // Even indices are user messages, odd indices are bot responses
+                  type: globalIndex % 2 === 0 ? 'user' : 'bot' as 'user' | 'bot',
+                  content: msg.message,
+                  timestamp: msg.timestamp
+                };
+                
+                currentConversation.push(messageWithType);
+                globalIndex++;
+              });
+              
+              // Add the last conversation if it has messages
+              if (currentConversation.length > 0) {
+                convertedChatHistory.push(currentConversation);
+              }
+            }
+            
+            setChatHistory(convertedChatHistory);
+            // Load saved language preference if available
+            if (data.preferredLanguage) {
+              setLanguage(data.preferredLanguage as LanguageOption);
+            }
+          } else {
+            router.push('/login');
+          }
+        } catch (error) {
+          console.error('Error loading user data:', error);
+          router.push('/login');
         }
       } else {
         router.push('/login');
       }
-    } else {
-      router.push('/login');
-    }
+    };
+
+    loadUserData();
   }, []);
 
   useEffect(() => {
@@ -110,16 +159,20 @@ export default function ChatbotPage() {
     }
   }, [language, lastTranscript]); // Re-initialize when language changes
 
-  const toggleLanguage = () => {
+  const toggleLanguage = async () => {
     const newLanguage = language === 'english' ? 'tamil' : 'english';
     setLanguage(newLanguage);
     
     // Save language preference
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
     if (currentUser.username) {
-      updateUserData(currentUser.username, {
-        preferredLanguage: newLanguage
-      });
+      try {
+        await updateUserData(currentUser.username, {
+          preferredLanguage: newLanguage
+        });
+      } catch (error) {
+        console.error('Error updating language preference:', error);
+      }
     }
     
     // Stop and reset speech recognition to update language
@@ -207,13 +260,36 @@ export default function ChatbotPage() {
 
       setChatHistory(updatedHistory);
       
+      // Convert chat history to the format expected by the database
+      // Add session markers to preserve conversation boundaries
+      const chatHistoryForDB = updatedHistory.flatMap((chat, sessionIndex) => {
+        const sessionMessages = chat.map(msg => ({
+          message: msg.content,
+          timestamp: msg.timestamp
+        }));
+        
+        // Add a session separator message if not the first session
+        if (sessionIndex > 0) {
+          sessionMessages.unshift({
+            message: `---SESSION_SEPARATOR_${sessionIndex}---`,
+            timestamp: chat[0]?.timestamp - 1000 // 1 second before first message
+          });
+        }
+        
+        return sessionMessages;
+      });
+      
       // Update user data
       const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
       if (currentUser.username) {
-        updateUserData(currentUser.username, {
-          chatHistory: updatedHistory,
-          preferredLanguage: language
-        });
+        try {
+          await updateUserData(currentUser.username, {
+            chatHistory: chatHistoryForDB,
+            preferredLanguage: language
+          });
+        } catch (error) {
+          console.error('Error updating user data:', error);
+        }
       }
 
     } catch (error) {
@@ -233,6 +309,13 @@ export default function ChatbotPage() {
   };
 
   const loadChat = (chat: Message[]) => {
+    // Check if chat is a valid array before trying to map it
+    if (!Array.isArray(chat)) {
+      console.warn('Invalid chat data received:', chat);
+      setMessages([]);
+      return;
+    }
+    
     const chatCopy = chat.map(msg => ({ ...msg }));
     setMessages(chatCopy);
     if (window.innerWidth < 768) {
@@ -240,15 +323,27 @@ export default function ChatbotPage() {
     }
   };
 
-  const deleteChat = (index: number) => {
+  const deleteChat = async (index: number) => {
     const updatedHistory = chatHistory.filter((_, i) => i !== index);
     setChatHistory(updatedHistory);
     
+    // Convert chat history to the format expected by the database
+    const chatHistoryForDB = updatedHistory.flatMap(chat => 
+      chat.map(msg => ({
+        message: msg.content,
+        timestamp: msg.timestamp
+      }))
+    );
+    
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
     if (currentUser.username) {
-      updateUserData(currentUser.username, {
-        chatHistory: updatedHistory
-      });
+      try {
+        await updateUserData(currentUser.username, {
+          chatHistory: chatHistoryForDB
+        });
+      } catch (error) {
+        console.error('Error updating chat history:', error);
+      }
     }
     
     if (messages.length > 0 && messages[0]?.id === chatHistory[index][0]?.id) {
@@ -256,10 +351,44 @@ export default function ChatbotPage() {
     }
   };
 
-  const startNewChat = () => {
+  const startNewChat = async () => {
+    // Save current conversation if there are messages and it's not already saved
+    if (messages.length > 0) {
+      // Check if this conversation is already in chat history
+      const isAlreadySaved = chatHistory.some(chat => 
+        chat.length === messages.length && 
+        chat.every((msg, index) => msg.content === messages[index].content)
+      );
+      
+      if (!isAlreadySaved) {
+        const updatedHistory = [...chatHistory, messages];
+        setChatHistory(updatedHistory);
+        
+        // Convert chat history to the format expected by the database
+        const chatHistoryForDB = updatedHistory.flatMap(chat => 
+          chat.map(msg => ({
+            message: msg.content,
+            timestamp: msg.timestamp
+          }))
+        );
+        
+        // Update user data
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        if (currentUser.username) {
+          try {
+            await updateUserData(currentUser.username, {
+              chatHistory: chatHistoryForDB
+            });
+          } catch (error) {
+            console.error('Error updating chat history:', error);
+          }
+        }
+      }
+    }
+    
+    // Clear current messages to start new chat
     setMessages([]);
     
-    // Only update chat history if there are messages to save
     if (window.innerWidth < 768) {
       setSidebarOpen(false);
     }
@@ -397,40 +526,47 @@ export default function ChatbotPage() {
                     </div>
                   ) : (
                     <div className="space-y-1 p-2">
-                      {chatHistory.map((chat, index) => (
-                        <div 
-                          key={index}
-                          onClick={() => loadChat(chat)}
-                          className={`p-3 rounded-lg cursor-pointer flex items-start justify-between ${
-                            messages.length > 0 && messages[0]?.id === chat[0]?.id
-                              ? theme === 'dark' ? 'bg-purple-900/30' : 'bg-purple-100'
-                              : theme === 'dark' ? 'hover:bg-slate-700' : 'hover:bg-slate-200'
-                          }`}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <MessageCircle size={16} className={theme === 'dark' ? 'text-purple-400' : 'text-purple-600'} />
-                              <p className="font-medium truncate">
-                                {chat[0]?.content?.substring(0, 20) || (language === 'tamil' ? `உரையாடல் ${index + 1}` : `Chat ${index + 1}`)}
+                      {chatHistory.map((chat, index) => {
+                        // Ensure chat is a valid array and has at least one message
+                        if (!Array.isArray(chat) || chat.length === 0) {
+                          return null;
+                        }
+                        
+                        return (
+                          <div 
+                            key={index}
+                            onClick={() => loadChat(chat)}
+                            className={`p-3 rounded-lg cursor-pointer flex items-start justify-between ${
+                              messages.length > 0 && messages[0]?.id === chat[0]?.id
+                                ? theme === 'dark' ? 'bg-purple-900/30' : 'bg-purple-100'
+                                : theme === 'dark' ? 'hover:bg-slate-700' : 'hover:bg-slate-200'
+                            }`}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <MessageCircle size={16} className={theme === 'dark' ? 'text-purple-400' : 'text-purple-600'} />
+                                <p className="font-medium truncate">
+                                  {chat[0]?.content?.substring(0, 20) || (language === 'tamil' ? `உரையாடல் ${index + 1}` : `Chat ${index + 1}`)}
+                                </p>
+                              </div>
+                              <p className="text-xs text-slate-400 mt-1 truncate">
+                                {chat.length > 0 
+                                  ? new Date(chat[0]?.timestamp || Date.now()).toLocaleString() 
+                                  : language === 'tamil' ? 'புதிய உரையாடல்' : 'New chat'}
                               </p>
                             </div>
-                            <p className="text-xs text-slate-400 mt-1 truncate">
-                              {chat.length > 0 
-                                ? new Date(chat[0]?.timestamp || Date.now()).toLocaleString() 
-                                : language === 'tamil' ? 'புதிய உரையாடல்' : 'New chat'}
-                            </p>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteChat(index);
+                              }}
+                              className={`p-1 rounded-full ${theme === 'dark' ? 'hover:bg-red-900/30' : 'hover:bg-red-100'}`}
+                            >
+                              <Trash2 size={14} className="text-red-400" />
+                            </button>
                           </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteChat(index);
-                            }}
-                            className={`p-1 rounded-full ${theme === 'dark' ? 'hover:bg-red-900/30' : 'hover:bg-red-100'}`}
-                          >
-                            <Trash2 size={14} className="text-red-400" />
-                          </button>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>

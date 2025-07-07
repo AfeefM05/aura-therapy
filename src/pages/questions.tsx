@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Camera, Check, ChevronRight, Star, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import "../app/globals.css";
-import { updateUserData } from '@/utils/userStorage';
+import { updateUserData } from '@/utils/mongoUserStorage';
 
 interface Question {
   question: string;
@@ -435,10 +435,17 @@ export default function QuestionsPage() {
       const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
       if (currentUser.username) {
         // Update user data with taglines
-        updateUserData(currentUser.username, {
-          taglines: taglineResult.taglines,
-          completedItems: {},
-        });
+        try {
+          console.log('Saving taglines for user:', currentUser.username);
+          console.log('Taglines to save:', taglineResult.taglines);
+          const updateResult = await updateUserData(currentUser.username, {
+            taglines: taglineResult.taglines,
+            completedItems: {},
+          });
+          console.log('Update result:', updateResult);
+        } catch (error) {
+          console.error('Error updating user data:', error);
+        }
       }
   
       router.push('/suggestions');
